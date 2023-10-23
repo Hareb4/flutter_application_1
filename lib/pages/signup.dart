@@ -1,36 +1,45 @@
+// ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/MongoDBModel.dart';
-import 'package:flutter_application_1/dbHelper/mongodb.dart';
-import 'package:mongo_dart/mongo_dart.dart' as M;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/constants/colors.dart';
+import 'package:flutter_application_1/main.dart';
 
 class Singup extends StatelessWidget {
+  List joinedclubs = [];
   String name = "";
   String email = "";
   String password = "";
   String uni = "";
   Singup({super.key});
-  
+
   get context => null;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        backgroundColor: Colors.purple[400],
-        child: const Icon(Icons.home),
-      ),
       appBar: AppBar(
         title: Text(
-          "Log in",
+          "Sign up",
           style: TextStyle(
               fontSize: 30, fontFamily: "myfont", fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
-        backgroundColor: Colors.purple[300],
+        backgroundColor: AppColor.sky,
+        actions: [
+          IconButton(
+              icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
+                  ? Icons.dark_mode
+                  : Icons.light_mode),
+              onPressed: () {
+                print("clicked swithc");
+                MyApp.themeNotifier.value =
+                    MyApp.themeNotifier.value == ThemeMode.light
+                        ? ThemeMode.dark
+                        : ThemeMode.light;
+                print(MyApp.themeNotifier.value);
+              })
+        ],
       ),
       body: SizedBox(
         width: double.infinity,
@@ -40,7 +49,7 @@ class Singup extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.purple[100],
+                color: AppColor.sky,
                 borderRadius: BorderRadius.circular(66),
               ),
               width: 266,
@@ -49,7 +58,7 @@ class Singup extends StatelessWidget {
                 decoration: InputDecoration(
                     icon: Icon(
                       Icons.person,
-                      color: Colors.purple[800],
+                      color: AppColor.darkblue,
                     ),
                     hintText: "Name :",
                     border: InputBorder.none),
@@ -63,21 +72,16 @@ class Singup extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Colors.purple[100],
+                color: AppColor.sky,
                 borderRadius: BorderRadius.circular(66),
               ),
               width: 266,
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
-                obscureText: true,
                 decoration: InputDecoration(
-                    suffix: Icon(
-                      Icons.visibility,
-                      color: Colors.purple[900],
-                    ),
                     icon: Icon(
-                      Icons.lock,
-                      color: Colors.purple[800],
+                      Icons.mail,
+                      color: AppColor.darkblue,
                       size: 19,
                     ),
                     hintText: "Email :",
@@ -93,7 +97,7 @@ class Singup extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Colors.purple[100],
+                color: AppColor.sky,
                 borderRadius: BorderRadius.circular(66),
               ),
               width: 266,
@@ -101,13 +105,14 @@ class Singup extends StatelessWidget {
               child: TextField(
                 obscureText: true,
                 decoration: InputDecoration(
+                   
                     suffix: Icon(
                       Icons.visibility,
-                      color: Colors.purple[900],
+                      color: AppColor.darkblue,
                     ),
                     icon: Icon(
                       Icons.lock,
-                      color: Colors.purple[800],
+                      color: AppColor.darkblue,
                       size: 19,
                     ),
                     hintText: "Password :",
@@ -123,21 +128,20 @@ class Singup extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                color: Colors.purple[100],
+                color: AppColor.sky,
                 borderRadius: BorderRadius.circular(66),
               ),
               width: 266,
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
-                obscureText: true,
                 decoration: InputDecoration(
                     suffix: Icon(
                       Icons.visibility,
-                      color: Colors.purple[900],
+                      color: AppColor.darkblue,
                     ),
                     icon: Icon(
-                      Icons.lock,
-                      color: Colors.purple[800],
+                      Icons.school,
+                      color: AppColor.darkblue,
                       size: 19,
                     ),
                     hintText: "University :",
@@ -152,21 +156,22 @@ class Singup extends StatelessWidget {
               height: 17,
             ),
             ElevatedButton(
+              
               onPressed: () {
-                Navigator.pushNamed(context, "/home");
-                // _insertData(name, email, password, uni);
                 print("$name, $email, $password, $uni");
+                createUesr();
+                Navigator.pushNamed(context, "/rec");
               },
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.purple),
+                backgroundColor: MaterialStateProperty.all(AppColor.lightsky),
                 padding: MaterialStateProperty.all(
-                    EdgeInsets.symmetric(horizontal: 106, vertical: 10)),
+                    EdgeInsets.symmetric(horizontal: 100, vertical: 15)),
                 shape: MaterialStateProperty.all(RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(27))),
               ),
               child: const Text(
-                "login",
-                style: TextStyle(fontSize: 24),
+                "Sign up",
+                style: TextStyle(fontSize: 24, color: Colors.black),
               ),
             ),
           ],
@@ -175,20 +180,18 @@ class Singup extends StatelessWidget {
     );
   }
 
-  Future<void> _insertData(
-      String name, String email, String password, String uni) async {
-    var _id = M.ObjectId();
-    final data = MongoDbModel(
-        id: _id,
-        name: name,
-        email: email,
-        password: password,
-        uni: uni,
-        joinedClubs: []);
-    var result = await MongoDatabase.insert(data);
-    ScaffoldMessenger.of(context as BuildContext)
-        .showSnackBar(SnackBar(content: Text("Inserted id " + _id.$oid)));
+  createUesr() {
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("users").doc(name);
+
+    Map<String, dynamic> users = {
+      "name": name,
+      "email": email,
+      "password": password,
+      "university_id": uni,
+      "joined_clubs": joinedclubs
+    };
+
+    documentReference.set(users).whenComplete(() => {print("$name created")});
   }
-
-
 }
