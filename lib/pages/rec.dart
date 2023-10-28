@@ -20,38 +20,6 @@ String result = '';
 String id = '';
 
 class _HobbiesGridState extends State<HobbiesGrid> {
-  // void createUser(str) async {
-  //   final Map<String, String> headers = {'Content-Type': 'application/json'};
-
-  //   try {
-  //     final response = await http.post(Uri.parse("http://127.0.0.1:5000/pyml"),
-  //         headers: headers, body: json.encode(str));
-  //   } on Exception catch (e) {
-  //     rethrow;
-  //   }
-  // }
-
-  // Future<http.Response> createAlbum(String title) {
-  //   return http.post(
-  //     Uri.parse('http://127.0.0.1:5000/pyml'),
-  //     headers: <String, String>{
-  //       'Content-Type': 'application/json; charset=UTF-8',
-  //     },
-  //     body: jsonEncode(<String, String>{
-  //       'title': title,
-  //     }),
-  //   );
-  // }
-
-  // Future<http.Response> getAlbum() {
-  //   return http.get(
-  //     Uri.parse('http://127.0.0.1:5000/pyml'),
-  //     headers: <String, String>{
-  //       'Content-Type': 'application/json; charset=UTF-8',
-  //     },
-  //   );
-  // }
-
   List<String> selectedHobbies = [];
   List<String> btns = [
     "Arts",
