@@ -1,10 +1,14 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/constants/colors.dart';
 import 'package:flutter_application_1/main.dart';
 import '../auth.dart';
+
+// After successful login or registration
+User? user = FirebaseAuth.instance.currentUser;
 
 class Login extends StatefulWidget {
   Login({super.key});
@@ -18,6 +22,11 @@ class _LoginState extends State<Login> {
 
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  final TextEditingController username = TextEditingController();
+  final TextEditingController universityId = TextEditingController();
+  final TextEditingController gender = TextEditingController();
+  String? sex;
+  List<String> joinedclubs = [];
 
   Future<void> signInWithEmailAndPassword() async {
     try {
@@ -34,11 +43,28 @@ class _LoginState extends State<Login> {
     try {
       await Auth().createUserWithEmailAndPassword(
           email: email.text, password: password.text);
+      createUesr();
+      Navigator.of(context).pushReplacementNamed('/rec');
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;
       });
     }
+  }
+
+  Future<void> createUesr() async {
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("users").doc(email.text);
+
+    Map<String, dynamic> users = {
+      "Username": username.text,
+      "Email": email.text,
+      "University_id": universityId.text,
+      "joined_clubs": joinedclubs,
+      "Sex": sex
+    };
+
+    documentReference.set(users).whenComplete(() => print("$username created"));
   }
 
   Widget _title() {
@@ -54,6 +80,24 @@ class _LoginState extends State<Login> {
       decoration: InputDecoration(
         labelText: title,
       ),
+    );
+  }
+
+  Widget _sexDropdown() {
+    return DropdownButton<String>(
+      value: sex,
+      items: <String>['male', 'female']
+          .map((value) => DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              ))
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          sex = value;
+        });
+      },
+      hint: Text('Select sex'),
     );
   }
 
@@ -84,111 +128,6 @@ class _LoginState extends State<Login> {
   // Store the entered text here
   @override
   Widget build(BuildContext context) {
-    // return Scaffold(
-    //     appBar: AppBar(
-    //       title: Text(
-    //         "Log in",
-    //         style: TextStyle(
-    //           color: AppColor.white,
-    //           fontSize: 30,
-    //           fontFamily: "myfont",
-    //           fontWeight: FontWeight.w500,
-    //         ),
-    //       ),
-    //       centerTitle: true,
-    //       backgroundColor: AppColor.darkblue,
-    //     ),
-    //     body: SizedBox(
-    //       width: double.infinity,
-    //       child: Column(
-    //         mainAxisAlignment: MainAxisAlignment.center,
-    //         crossAxisAlignment: CrossAxisAlignment.center,
-    //         children: [
-    //           IconButton(
-    //               icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
-    //                   ? Icons.dark_mode
-    //                   : Icons.light_mode),
-    //               onPressed: () {
-    //                 print("clicked swithc");
-    //                 MyApp.themeNotifier.value =
-    //                     MyApp.themeNotifier.value == ThemeMode.light
-    //                         ? ThemeMode.dark
-    //                         : ThemeMode.light;
-    //                 print(MyApp.themeNotifier.value);
-    //               }),
-    //           Container(
-    //             decoration: BoxDecoration(
-    //               color: AppColor.sky,
-    //               borderRadius: BorderRadius.circular(66),
-    //             ),
-    //             width: 266,
-    //             padding: EdgeInsets.symmetric(horizontal: 16),
-    //             child: TextField(
-    //               decoration: InputDecoration(
-    //                   icon: Icon(
-    //                     Icons.person,
-    //                     color: AppColor.darkblue,
-    //                   ),
-    //                   hintText: "Your Email :",
-    //                   border: InputBorder.none),
-    //               onChanged: (text) {
-    //                 enteredText = text; // Update the entered text
-    //               },
-    //             ),
-    //           ),
-    //           SizedBox(
-    //             height: 23,
-    //           ),
-    //           Container(
-    //             decoration: BoxDecoration(
-    //               color: AppColor.sky,
-    //               borderRadius: BorderRadius.circular(66),
-    //             ),
-    //             width: 266,
-    //             padding: EdgeInsets.symmetric(horizontal: 16),
-    //             child: TextField(
-    //               obscureText: true,
-    //               decoration: InputDecoration(
-    //                   suffix: Icon(
-    //                     Icons.visibility,
-    //                     color: AppColor.darkblue,
-    //                   ),
-    //                   icon: Icon(
-    //                     Icons.lock,
-    //                     color: AppColor.darkblue,
-    //                     size: 19,
-    //                   ),
-    //                   hintText: "Password :",
-    //                   border: InputBorder.none),
-    //               onChanged: (value) {
-    //                 // Print the entered text in the console
-    //               },
-    //             ),
-    //           ),
-    //           SizedBox(
-    //             height: 17,
-    //           ),
-    //           ElevatedButton(
-    //             onPressed: () {
-    //               Navigator.pushNamed(context, "/home");
-    //               print("$enteredText");
-    //             },
-    //             style: ButtonStyle(
-    //               backgroundColor: MaterialStateProperty.all(AppColor.lightsky),
-    //               padding: MaterialStateProperty.all(
-    //                   EdgeInsets.symmetric(horizontal: 106, vertical: 10)),
-    //               shape: MaterialStateProperty.all(RoundedRectangleBorder(
-    //                   borderRadius: BorderRadius.circular(27))),
-    //             ),
-    //             child: Text(
-    //               "login",
-    //               style: TextStyle(fontSize: 24, color: Colors.black),
-    //             ),
-    //           ),
-    //         ],
-    //       ),
-    //     )
-    //   );
     return Scaffold(
       appBar: AppBar(
         title: _title(),
@@ -203,6 +142,11 @@ class _LoginState extends State<Login> {
           children: <Widget>[
             _entryField('email', email),
             _entryField('password', password),
+            if (!isLogin) ...[
+              _entryField('username', username),
+              _entryField('university Id', universityId),
+              _sexDropdown(),
+            ],
             _errorMessage(),
             _submitButton(),
             _loginOrRegisterButton()

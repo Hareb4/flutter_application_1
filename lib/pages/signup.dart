@@ -8,9 +8,9 @@ import 'package:flutter_application_1/main.dart';
 class Singup extends StatelessWidget {
   List joinedclubs = [];
   String name = "";
-  String email = "";
   String password = "";
-  String uni = "";
+  String email = "";
+  String id = "";
   Singup({super.key});
 
   get context => null;
@@ -144,10 +144,10 @@ class Singup extends StatelessWidget {
                       color: AppColor.darkblue,
                       size: 19,
                     ),
-                    hintText: "University :",
+                    hintText: "University ID :",
                     border: InputBorder.none),
                 onChanged: (value) {
-                  uni = value;
+                  id = value;
                   // Print the entered text in the console
                 },
               ),
@@ -158,7 +158,7 @@ class Singup extends StatelessWidget {
             ElevatedButton(
               
               onPressed: () {
-                print("$name, $email, $password, $uni");
+                print("$name, $email, $password, $id");
                 createUesr();
                 Navigator.pushNamed(context, "/rec");
               },
@@ -185,10 +185,9 @@ class Singup extends StatelessWidget {
         FirebaseFirestore.instance.collection("users").doc(name);
 
     Map<String, dynamic> users = {
-      "name": name,
-      "email": email,
-      "password": password,
-      "university_id": uni,
+      "Username": name,
+      "Email": email,
+      "University_id": id,
       "joined_clubs": joinedclubs
     };
 

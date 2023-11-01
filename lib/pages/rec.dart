@@ -10,6 +10,9 @@ import 'package:flutter_application_1/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'func.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+User? user = FirebaseAuth.instance.currentUser;
 
 class HobbiesGrid extends StatefulWidget {
   @override
@@ -17,7 +20,7 @@ class HobbiesGrid extends StatefulWidget {
 }
 
 String result = '';
-String id = '';
+String clubid = '';
 
 class _HobbiesGridState extends State<HobbiesGrid> {
   List<String> selectedHobbies = [];
@@ -321,16 +324,24 @@ class _ClubsPageState extends State<ClubsPage> {
                               final club = clubs[index];
                               return GestureDetector(
                                 onTap: () {
-                                  id = club['Club_ID'];
+                                  clubid = club['Club_ID'];
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => ClubPage()),
+                                        builder: (context) => ClubPage(
+                                              clubId: clubid,
+                                            )),
                                   );
+                                  // Navigator.push(
+                                  //   context,
+                                  //   MaterialPageRoute(
+                                  //       builder: (context) => ClubPage()),
+                                  // );
                                   // Add your action here when the Container is pressed.
                                 },
                                 child: Container(
                                   height: 70,
+                                  margin: EdgeInsets.only(bottom: 5),
                                   decoration: BoxDecoration(
                                     gradient: AppColor.linearGradient,
                                     borderRadius: BorderRadius.circular(20),
@@ -386,141 +397,5 @@ class _ClubsPageState extends State<ClubsPage> {
                     ),
                   ]),
             )));
-  }
-}
-
-class RecClub extends StatefulWidget {
-  @override
-  _RecClub createState() => _RecClub();
-}
-
-class _RecClub extends State<RecClub> {
-  List interests = [];
-  TextEditingController bodyController = TextEditingController();
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Align(
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            IconButton(
-                icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
-                    ? Icons.dark_mode
-                    : Icons.light_mode),
-                onPressed: () {
-                  print("clicked swithc");
-                  MyApp.themeNotifier.value =
-                      MyApp.themeNotifier.value == ThemeMode.light
-                          ? ThemeMode.dark
-                          : ThemeMode.light;
-                  print(MyApp.themeNotifier.value);
-                }),
-            Text(
-              "Recommended Clubs: ",
-              style: TextStyle(fontSize: 24),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ClubPage()),
-                );
-                // Add your action here when the Container is pressed.
-              },
-              child: Container(
-                width: 350,
-                height: 70,
-                decoration: BoxDecoration(
-                  gradient: AppColor.linearGradient,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16, left: 16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Main Text - Club Name',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Date',
-                        style: TextStyle(
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 17,
-            ),
-            Container(
-              width: 350,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 16, left: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Main Text - Club Name',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 37,
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, "/home");
-              },
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(AppColor.red),
-                padding: MaterialStateProperty.all(
-                    EdgeInsets.symmetric(horizontal: 100, vertical: 15)),
-                shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24))),
-              ),
-              child: const Text(
-                "Go To Home",
-                style: TextStyle(fontSize: 24, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

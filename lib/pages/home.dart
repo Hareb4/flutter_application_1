@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import "dart:io";
-import 'dart:js_interop';
+import 'package:flutter_application_1/pages/rec.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/main.dart';
@@ -10,11 +10,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'func.dart';
-import 'package:http/http.dart' as http;
+import '../components/component.dart';
+
+User? user = FirebaseAuth.instance.currentUser;
 
 String result = '';
 String id = '';
 String postid = '';
+
+String? username;
+String? email;
+String? universityId;
+String? sex;
+List<String>? joinedClubs;
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -41,10 +49,12 @@ class _HomeState extends State<Home> {
   int _currentIndex = 0;
 
   final List<Widget> _tabs = [
-    HomeScreen(),
+    Loadingpage(),
     ClubsScreen(),
     ProfileScreen(),
-    ClubPage(),
+    ClubPage(
+      clubId: id,
+    ),
   ];
 
   @override
@@ -109,27 +119,126 @@ class _HomeState extends State<Home> {
   }
 }
 
+class Loadingpage extends StatefulWidget {
+  const Loadingpage({super.key});
+
+  @override
+  State<Loadingpage> createState() => _LoadingpageState();
+}
+
+class _LoadingpageState extends State<Loadingpage> {
+  @override
+  void initState() {
+    super.initState();
+    fetchall();
+  }
+
+  Future<void> fetchall() async {
+    result = '';
+    id = '';
+    postid = '';
+
+    username = '';
+    email = '';
+    universityId = '';
+    sex = '';
+    joinedClubs = [];
+    final fetchedUsername = await getUsername();
+    final fetchEmail = await getEmail();
+    final fetchUniId = await getUniversityId();
+    final fetchSex = await getSex();
+    final fetchJoinedClubs = await getjoinedClubs();
+
+    setState(() {
+      username = fetchedUsername;
+      print('in setState username = $username');
+      email = fetchEmail;
+      print('in setState email = $email');
+      universityId = fetchUniId;
+      print('in setState universityId = $universityId');
+      sex = fetchSex;
+      print('in setState sex = $sex');
+      joinedClubs = fetchJoinedClubs;
+      print('in setState joined clubs = $joinedClubs');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (joinedClubs!.isNotEmpty) {
+      print('before home screen = $joinedClubs');
+      return HomeScreen();
+    } else {
+      return CircularProgressIndicator();
+    }
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   fetchall();
+  // }
+
+  // Future<void> fetchall() async {
+  //   final fetchedUsername = await getUsername();
+  //   final fetchEmail = await getEmail();
+  //   final fetchUniId = await getUniversityId();
+  //   final fetchSex = await getSex();
+  //   final fetchJoinedClubs = await getjoinedClubs();
+
+  //   setState(() {
+  //     username = fetchedUsername;
+  //     print('in setState username = $username');
+  //     email = fetchEmail;
+  //     print('in setState email = $email');
+  //     universityId = fetchUniId;
+  //     print('in setState universityId = $universityId');
+  //     sex = fetchSex;
+  //     print('in setState sex = $sex');
+  //     joinedClubs = fetchJoinedClubs;
+  //     print('in setState joined clubs = $joinedClubs');
+  //   });
+  // }
+
+  final Stream<QuerySnapshot> _clubsSnapshots = FirebaseFirestore.instance
+      .collection('clubs')
+      .where('Club_ID', arrayContainsAny: joinedClubs)
+      .snapshots();
+
+  final Stream<QuerySnapshot> _publicEvents = FirebaseFirestore.instance
+      .collection('event')
+      .where('isPublic', isEqualTo: "true")
+      .snapshots();
+
+  final Stream<QuerySnapshot> _privateEventsSnapshots = FirebaseFirestore
+      .instance
+      .collection('event')
+      .where('isPublic', isEqualTo: 'false')
+      .snapshots();
+
   @override
   Widget build(BuildContext context) {
+    print('after go home screen = $joinedClubs');
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 24, bottom: 20, top: 20),
-              // Add margin on the left
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Hi User',
+                  'Hi ${username}!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -137,40 +246,170 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            Container(
-              width: 350,
-              height: 300,
-              decoration: BoxDecoration(
-                color: AppColor.sky,
-                borderRadius: BorderRadius.circular(20),
+            Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Events For Everyone!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.blueGrey,
+                    )),
               ),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16, left: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Main Text - Club Name',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF22005d),
-                      ),
-                    ),
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF22005d),
-                      ),
-                    ),
-                  ],
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: _publicEvents,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final events = snapshot.data!.docs;
+                  print(events.length);
+                  return ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemCount: events.length,
+                    itemBuilder: (context, index) {
+                      final event = events[index];
+                      print(event['Event_Name']);
+                      return GestureDetector(
+                        onTap: () {
+                          // Add your action here when the Container is pressed.
+                        },
+                        child: Container(
+                          margin: EdgeInsets.all(15),
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppColor.sky,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: 16, left: 16),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event['Event_Name'],
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF22005d),
+                                  ),
+                                ),
+                                Text(
+                                  event['Event_Date'],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF22005d),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 24, bottom: 20, top: 20),
+              // Add margin on the left
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Your events',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-            SizedBox(
-              height: 23,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('event')
+                  .where('isPublic', isEqualTo: 'false')
+                  .where('Club_ID', whereIn: joinedClubs)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    // While data is loading, show a loading indicator.
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    final events = snapshot.data!.docs;
+                    if (events.isEmpty) {
+                      return Text('No clubs found.');
+                    }
+                    print('events.length = ${events.length}');
+                    return ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        // print(club['Club_Name']);
+                        // print(club['Club_ID']);
+                        // print(joinedClubs?[0]);
+                        // print(club['Club_ID'] == joinedClubs?[0]);
+                        // joinedClubs!.contains(event['Club_ID'])
+                        if (true) {
+                          return GestureDetector(
+                            onTap: () {
+                              // Add your action here when the Container is pressed.
+                            },
+                            child: Container(
+                              margin: EdgeInsets.all(15),
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: AppColor.sky,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.only(bottom: 16, left: 16),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      event['Event_Name'],
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF22005d),
+                                      ),
+                                    ),
+                                    Text(
+                                      event['Event_description'],
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF22005d),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  }
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
             ),
             Padding(
               padding: const EdgeInsets.only(left: 24, bottom: 20, top: 20),
@@ -186,78 +425,77 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SizedBox(
-              height: 23,
-            ),
-            Container(
-              width: 350,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16, left: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Main Text - Club Name',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 17,
-            ),
-            Container(
-              width: 350,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16, left: 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Main Text - Club Name',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 17,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('clubs')
+                  .where('Club_ID', whereIn: joinedClubs)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  print('joinedclubs after snapshot $joinedClubs');
+                  print('snapshot ${snapshot.data!.docs}');
+                  final clubs = snapshot.data!.docs;
+                  return ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemCount: clubs.length,
+                    itemBuilder: (context, index) {
+                      final club = clubs[index];
+                      // print(club['Club_Name']);
+                      // print(club['Club_ID']);
+                      print(joinedClubs?[0]);
+                      // print(club['Club_ID'] == joinedClubs?[0]);
+                      // var art = joinedClubs!.contains(club['Club_ID']);
+                      if (true) {
+                        return GestureDetector(
+                          onTap: () {
+                            // Add your action here when the Container is pressed.
+                          },
+                          child: Container(
+                            margin: EdgeInsets.all(15),
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: AppColor.sky,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 16, left: 16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    club['Club_Name'],
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF22005d),
+                                    ),
+                                  ),
+                                  Text(
+                                    club['Club_Description'],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF22005d),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        return Container(); // Return an empty container instead of null
+                      }
+                    },
+                  );
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
             ),
           ],
         ),
@@ -275,6 +513,11 @@ class _ClubsScreenState extends State<ClubsScreen> {
   final Stream<QuerySnapshot> _clubsStream =
       FirebaseFirestore.instance.collection('clubs').snapshots();
 
+  String searchText = '';
+  String selectedCategory = '';
+  Stream<QuerySnapshot> streamQuery =
+      FirebaseFirestore.instance.collection('clubs').snapshots();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -284,14 +527,6 @@ class _ClubsScreenState extends State<ClubsScreen> {
           SliverToBoxAdapter(
             child: Column(
               children: [
-                Padding(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Container(
-                      // Your search bar and buttons go here
-                      // ...
-                      ),
-                ),
-                SizedBox(height: 23),
                 Padding(
                   padding: EdgeInsets.only(top: 20), // Add space at the top
                   child: Container(
@@ -312,7 +547,17 @@ class _ClubsScreenState extends State<ClubsScreen> {
                           fillColor: AppColor.darkblue,
                           border: InputBorder.none),
                       onChanged: (value) {
-                        // Print the entered text in the console
+                        setState(() {
+                          searchText = value;
+                          streamQuery = FirebaseFirestore.instance
+                              .collection('clubs')
+                              .where('Club_Name',
+                                  isGreaterThanOrEqualTo:
+                                      searchText.toLowerCase())
+                              .where('Club_Name',
+                                  isLessThan: '${searchText.toLowerCase()}z')
+                              .snapshots();
+                        });
                       },
                     ),
                   ),
@@ -339,6 +584,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                           ],
                         ),
                         onPressed: () {
+                          selectedCategory = 'Sports';
                           // Do something when the button is pressed.
                         },
                       ),
@@ -348,10 +594,11 @@ class _ClubsScreenState extends State<ClubsScreen> {
                       child: ElevatedButton(
                         child: Row(
                           children: [
-                            Text("culture"),
+                            Text("Social"),
                           ],
                         ),
                         onPressed: () {
+                          selectedCategory = 'Social';
                           // Do something when the button is pressed.
                         },
                       ),
@@ -361,10 +608,11 @@ class _ClubsScreenState extends State<ClubsScreen> {
                       child: ElevatedButton(
                         child: Row(
                           children: [
-                            Text("education"),
+                            Text("Educational"),
                           ],
                         ),
                         onPressed: () {
+                          selectedCategory = 'Educational';
                           // Do something when the button is pressed.
                         },
                       ),
@@ -374,25 +622,50 @@ class _ClubsScreenState extends State<ClubsScreen> {
                 SizedBox(
                   height: 23,
                 ),
-                //
+                Container(
+                  margin: EdgeInsets.all(8.0), // Add margin to create space
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      fixedSize: MaterialStateProperty.all(
+                          Size(100, 20)), // Width and height values
+                    ),
+                    child: Row(
+                      children: [
+                        Text("recomend me club"),
+                      ],
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HobbiesGrid()),
+                      );
+                      // Do something when the button is pressed.
+                    },
+                  ),
+                ),
               ],
             ),
           ),
           StreamBuilder<QuerySnapshot>(
-            stream: _clubsStream,
+            stream: streamQuery,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 final clubs = snapshot.data!.docs;
+
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final club = clubs[index];
+
                       return GestureDetector(
                         onTap: () {
                           id = club['Club_ID'];
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => ClubPage()),
+                            MaterialPageRoute(
+                                builder: (context) => ClubPage(
+                                      clubId: id,
+                                    )),
                           );
                         },
                         child: Container(
@@ -408,6 +681,9 @@ class _ClubsScreenState extends State<ClubsScreen> {
                           child: Text(club['Club_Name']),
                         ),
                       );
+                      // } else {
+                      //   return Container();
+                      // }
                     },
                     childCount: clubs.length,
                   ),
@@ -438,6 +714,15 @@ class _ProfileScreen extends State<ProfileScreen> {
 
   Future<void> signOut() async {
     await Auth().signOut();
+    // result = '';
+    // id = '';
+    // postid = '';
+
+    // username = '';
+    // email = '';
+    // universityId = '';
+    // sex = '';
+    // joinedClubs = [];
   }
 
   Widget _userUid() {
@@ -728,11 +1013,52 @@ class _ProfileScreen extends State<ProfileScreen> {
 }
 
 class ClubPage extends StatefulWidget {
+  final String clubId;
+
+  ClubPage({required this.clubId});
+
   @override
   State<ClubPage> createState() => _ClubPageState();
 }
 
 class _ClubPageState extends State<ClubPage> {
+  String? type;
+
+  Widget _typeDropdown() {
+    return DropdownButton<String>(
+      value: type,
+      items: <String>['Social', 'Sports', 'Educational']
+          .map((value) => DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              ))
+          .toList(),
+      onChanged: (value) {
+        setState(() {
+          type = value;
+        });
+      },
+      hint: Text('Select Type'),
+    );
+  }
+
+  Future<void> createEvent() async {
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("event").doc();
+
+    Map<String, dynamic> event = {
+      "Event_Title": titleController.text,
+      "Event_Description": descriptionController.text,
+      "Event_Type": type,
+      "Event_Place": placeController.text,
+      "Club_ID": id,
+      "Event_Date": dateController.text,
+      "isPublic": isPublic,
+    };
+
+    documentReference.set(event);
+  }
+
   TextEditingController titleController = TextEditingController();
 
   TextEditingController dateController = TextEditingController();
@@ -742,6 +1068,7 @@ class _ClubPageState extends State<ClubPage> {
   TextEditingController descriptionController = TextEditingController();
 
   bool isPublic = false;
+  bool isAuth = false;
 
   @override
   final Stream<QuerySnapshot> _clubInfo = FirebaseFirestore.instance
@@ -754,227 +1081,129 @@ class _ClubPageState extends State<ClubPage> {
       .where('Club_ID', isEqualTo: id)
       .snapshots();
 
+  Future<void> _updateJoinedClubs(String newClubId) async {
+    // Get the user document.
+    final userDocument = await FirebaseFirestore.instance
+        .collection('users')
+        .where('Email', isEqualTo: email)
+        .get();
+
+    // Get the joinedClubs list from the user document.
+
+    // Add the new club ID to the joinedClubs list.
+    joinedClubs!.add(id);
+
+    // Update the user document with the new joinedClubs list.
+    await FirebaseFirestore.instance.collection('users').doc(username).update({
+      'joined_clubs': joinedClubs,
+    });
+  }
+
   Widget build(BuildContext context) {
+    String clid = widget.clubId;
+
+    print("club id = $clid");
     return StreamBuilder<QuerySnapshot>(
-      stream: _clubInfo,
+      stream: FirebaseFirestore.instance
+          .collection('clubs')
+          .where('Club_ID', isEqualTo: clid)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final clubInfo =
               snapshot.data!.docs[0].data() as Map<String, dynamic>;
 
+          if (isAuth) {
+            setState(() {
+              isAuth = false; // Or true, depending on your condition
+            });
+          }
+
           return Scaffold(
-            resizeToAvoidBottomInset: false,
-            appBar: AppBar(
-              leading: IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, "/home");
-                },
-                icon: Icon(Icons.arrow_back_ios),
-                //replace with our own icon data.
-              ),
-              backgroundColor: AppColor.sky,
-              title: Text(clubInfo['Club_Name']),
-              actions: [
-                IconButton(
-                    icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
-                        ? Icons.dark_mode
-                        : Icons.light_mode),
-                    onPressed: () {
-                      print("clicked swithc");
-                      MyApp.themeNotifier.value =
-                          MyApp.themeNotifier.value == ThemeMode.light
-                              ? ThemeMode.dark
-                              : ThemeMode.light;
-                      print(MyApp.themeNotifier.value);
-                    }),
-                IconButton(
-                  icon: Icon(Icons.add),
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(
+                leading: IconButton(
                   onPressed: () {
-                    // Add Club button action
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Home()),
+                    );
                   },
+                  icon: Icon(Icons.arrow_back_ios),
                 ),
-                IconButton(
-                  icon: Icon(Icons.info),
-                  onPressed: () {
-                    showModalBottomSheet(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return StatefulBuilder(
-                            builder:
-                                (BuildContext context, StateSetter setState) {
-                              return SingleChildScrollView(
-                                child: Container(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Text(
-                                        'Information',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: EdgeInsets.all(10),
-                                        width: 350,
-                                        height: 70,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Color.fromARGB(255, 113, 95, 162),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 16, left: 16),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Admin',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Ahmed Ali',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                backgroundColor: AppColor.sky,
+                title: Text(clubInfo['Club_Name']),
+                actions: [
+                  IconButton(
+                      icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
+                          ? Icons.dark_mode
+                          : Icons.light_mode),
+                      onPressed: () {
+                        print("clicked swithc");
+                        MyApp.themeNotifier.value =
+                            MyApp.themeNotifier.value == ThemeMode.light
+                                ? ThemeMode.dark
+                                : ThemeMode.light;
+                        print(MyApp.themeNotifier.value);
+                      }),
+                  if (!joinedClubs!.contains(clid))
+                    IconButton(
+                      icon: Icon(Icons.add),
+                      onPressed: () async {
+                        joinedClubs!.add(clid);
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(email)
+                            .update({
+                          'joined_clubs': joinedClubs,
+                        });
+                        setState(() {});
+
+                        // (context as Element).reassemble();
+                      },
+                    )
+                  else
+                    IconButton(
+                      icon: Icon(Icons.logout),
+                      onPressed: () async {
+                        print('logout email');
+                        print(clid);
+                        joinedClubs!.remove(clid);
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(email)
+                            .update({
+                          'joined_clubs': joinedClubs,
+                        });
+                        setState(() {});
+
+                        // (context as Element).reassemble();
+                        // Add Club button action
+                      },
+                    ),
+                  IconButton(
+                    icon: Icon(Icons.info),
+                    onPressed: () {
+                      showModalBottomSheet(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return StatefulBuilder(
+                              builder:
+                                  (BuildContext context, StateSetter setState) {
+                                return SingleChildScrollView(
+                                  child: Container(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Text(
+                                          'Information',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          showModalBottomSheet(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return StatefulBuilder(builder:
-                                                    (BuildContext context,
-                                                        StateSetter setState) {
-                                                  return SingleChildScrollView(
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.all(16.0),
-                                                      child: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: <Widget>[
-                                                            Container(
-                                                              margin: EdgeInsets
-                                                                  .all(10),
-                                                              width: 350,
-                                                              height: 70,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Color
-                                                                    .fromARGB(
-                                                                        255,
-                                                                        113,
-                                                                        95,
-                                                                        162),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            20),
-                                                              ),
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .only(
-                                                                        bottom:
-                                                                            16,
-                                                                        left:
-                                                                            16),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .end,
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Text(
-                                                                      'hareb omar',
-                                                                      style:
-                                                                          TextStyle(
-                                                                        fontSize:
-                                                                            16,
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            Container(
-                                                              margin: EdgeInsets
-                                                                  .all(10),
-                                                              width: 350,
-                                                              height: 70,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Color
-                                                                    .fromARGB(
-                                                                        255,
-                                                                        113,
-                                                                        95,
-                                                                        162),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            20),
-                                                              ),
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .only(
-                                                                        bottom:
-                                                                            16,
-                                                                        left:
-                                                                            16),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .end,
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Text(
-                                                                      'Ahmed Ali',
-                                                                      style:
-                                                                          TextStyle(
-                                                                        fontSize:
-                                                                            12,
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ]),
-                                                    ),
-                                                  );
-                                                });
-                                              });
-                                          // Add your action here when the Container is pressed.
-                                        },
-                                        child: Container(
+                                        Container(
                                           margin: EdgeInsets.all(10),
                                           width: 350,
                                           height: 70,
@@ -994,7 +1223,7 @@ class _ClubPageState extends State<ClubPage> {
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  'Members',
+                                                  'Admin',
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
@@ -1002,7 +1231,7 @@ class _ClubPageState extends State<ClubPage> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  '12',
+                                                  'Ahmed Ali',
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     color: Colors.white,
@@ -1012,295 +1241,450 @@ class _ClubPageState extends State<ClubPage> {
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      Container(
-                                        margin: EdgeInsets.all(10),
-                                        width: 350,
-                                        height: 90,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Color.fromARGB(255, 113, 95, 162),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 16, left: 16),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Moderater',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return StatefulBuilder(
+                                                      builder:
+                                                          (BuildContext context,
+                                                              StateSetter
+                                                                  setState) {
+                                                    return SingleChildScrollView(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(
+                                                            16.0),
+                                                        child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: <Widget>[
+                                                              Container(
+                                                                margin:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            10),
+                                                                width: 350,
+                                                                height: 70,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Color
+                                                                      .fromARGB(
+                                                                          255,
+                                                                          113,
+                                                                          95,
+                                                                          162),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              20),
+                                                                ),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          bottom:
+                                                                              16,
+                                                                          left:
+                                                                              16),
+                                                                  child: Column(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .end,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Text(
+                                                                        'hareb omar',
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontSize:
+                                                                              16,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              Container(
+                                                                margin:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            10),
+                                                                width: 350,
+                                                                height: 70,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Color
+                                                                      .fromARGB(
+                                                                          255,
+                                                                          113,
+                                                                          95,
+                                                                          162),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              20),
+                                                                ),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          bottom:
+                                                                              16,
+                                                                          left:
+                                                                              16),
+                                                                  child: Column(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .end,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Text(
+                                                                        'Ahmed Ali',
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontSize:
+                                                                              12,
+                                                                          color:
+                                                                              Colors.white,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ]),
+                                                      ),
+                                                    );
+                                                  });
+                                                });
+                                            // Add your action here when the Container is pressed.
+                                          },
+                                          child: Container(
+                                            margin: EdgeInsets.all(10),
+                                            width: 350,
+                                            height: 70,
+                                            decoration: BoxDecoration(
+                                              color: Color.fromARGB(
+                                                  255, 113, 95, 162),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 16, left: 16),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Members',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '12',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              Text(
-                                                'Ahmed Ali',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Juma ahmed',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Container(
-                                        margin: EdgeInsets.all(10),
-                                        width: 350,
-                                        height: 70,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Color.fromARGB(255, 113, 95, 162),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 16, left: 16),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Tags',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                        Container(
+                                          margin: EdgeInsets.all(10),
+                                          width: 350,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            color: Color.fromARGB(
+                                                255, 113, 95, 162),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 16, left: 16),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Moderater',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                'Thinking money language',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white,
+                                                Text(
+                                                  'Ahmed Ali',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                                Text(
+                                                  'Juma ahmed',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        Container(
+                                          margin: EdgeInsets.all(10),
+                                          width: 350,
+                                          height: 70,
+                                          decoration: BoxDecoration(
+                                            color: Color.fromARGB(
+                                                255, 113, 95, 162),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 16, left: 16),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Tags',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  'Thinking money language',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        });
+                                );
+                              },
+                            );
+                          });
 
-                    // Info button action
-                  },
-                ),
-              ],
-            ),
-            body: CustomScrollView(slivers: <Widget>[
-              SliverToBoxAdapter(
-                  child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Upcoming Events',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Text('nah'),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ForumPage()),
-                      );
-                      // Add your action here when the Container is pressed.
+                      // Info button action
                     },
-                    child: Container(
-                      margin: EdgeInsets.all(16),
-                      width: 350,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: AppColor.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 16, left: 16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Forum',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                  ),
+                ],
+              ),
+              body: CustomScrollView(slivers: <Widget>[
+                SliverToBoxAdapter(
+                    child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Upcoming Events',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  ),
-                ],
-              )),
-              StreamBuilder<QuerySnapshot>(
-                stream: _eventsStream,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final events = snapshot.data!.docs;
-                    return SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final event =
-                              events[index].data() as Map<String, dynamic>;
-                          return GestureDetector(
-                            onTap: () {
-                              // Add your action here when the Container is pressed.
-                            },
-                            child: EventCard(
-                                id: event['Club_ID'],
-                                name: event['Event_Name'],
-                                description: event['Event_description'],
-                                date: event['Event_Date'],
-                                time: '25:00'),
-                          );
-                        },
-                        childCount: events.length,
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    return SliverToBoxAdapter(
-                        child: Text('Error: ${snapshot.error}'));
-                  } else {
-                    return SliverToBoxAdapter(
-                        child: CircularProgressIndicator());
-                  }
-                },
-              ),
-            ]),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () {
-                showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return StatefulBuilder(
-                        builder: (BuildContext context, StateSetter setState) {
-                          return SingleChildScrollView(
-                            child: Container(
-                              padding: EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    'New Event',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
-                                  TextField(
-                                    controller: titleController,
-                                    decoration:
-                                        InputDecoration(labelText: 'Title'),
-                                  ),
-                                  SizedBox(height: 16),
-                                  TextField(
-                                    controller: dateController,
-                                    decoration:
-                                        InputDecoration(labelText: 'Date'),
-                                  ),
-                                  SizedBox(height: 16),
-                                  TextField(
-                                    controller: placeController,
-                                    decoration:
-                                        InputDecoration(labelText: 'Place'),
-                                  ),
-                                  SizedBox(height: 16),
-                                  TextField(
-                                    controller: descriptionController,
-                                    decoration: InputDecoration(
-                                        labelText: 'Description'),
-                                  ),
-                                  SizedBox(height: 16),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: isPublic
-                                          ? Color.fromARGB(255, 56, 24, 66)
-                                          : Colors.white,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        isPublic = !isPublic;
-                                        print(isPublic);
-                                      });
-                                    },
-                                    child: Text('Public: $isPublic',
-                                        style: TextStyle(
-                                          color: isPublic
-                                              ? Colors.white
-                                              : Color.fromARGB(255, 56, 24, 66),
-                                        )),
-                                  ),
-                                  SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Get values from text fields and isPublic checkbox
-                                    },
-                                    child: Text('Add image'),
-                                  ),
-                                  SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Get values from text fields and isPublic checkbox
-                                      String title = titleController.text;
-                                      String date = dateController.text;
-                                      String place = placeController.text;
-                                      String description =
-                                          descriptionController.text;
-
-                                      // Do something with the values
-                                      print('Title: $title');
-                                      print('Date: $date');
-                                      print('Place: $place');
-                                      print('Description: $description');
-                                      print('Is Public: $isPublic');
-
-                                      // Close the bottom sheet
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text('Add event'),
-                                  ),
-                                ],
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ForumPage()),
+                        );
+                        // Add your action here when the Container is pressed.
+                      },
+                      child: Container(
+                        margin: EdgeInsets.all(16),
+                        width: 350,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: AppColor.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16, left: 16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Forum',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )),
+                StreamBuilder<QuerySnapshot>(
+                  stream: _eventsStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      final events = snapshot.data!.docs;
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final event =
+                                events[index].data() as Map<String, dynamic>;
+                            return GestureDetector(
+                              onTap: () {
+                                // Add your action here when the Container is pressed.
+                              },
+                              child: EventCard(
+                                  id: event['Club_ID'],
+                                  name: event['Event_Name'],
+                                  description: event['Event_description'],
+                                  date: event['Event_Date'],
+                                  time: '25:00'),
+                            );
+                          },
+                          childCount: events.length,
+                        ),
                       );
-                    });
-              },
-              label: const Text('Add event'),
-              icon: const Icon(Icons.add),
-            ),
-          );
+                    } else if (snapshot.hasError) {
+                      return SliverToBoxAdapter(
+                          child: Text('Error: ${snapshot.error}'));
+                    } else {
+                      return SliverToBoxAdapter(
+                          child: CircularProgressIndicator());
+                    }
+                  },
+                ),
+              ]),
+              floatingActionButton: isAuth
+                  ? FloatingActionButton.extended(
+                      onPressed: () {
+                        showModalBottomSheet(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return StatefulBuilder(
+                                builder: (BuildContext context,
+                                    StateSetter setState) {
+                                  return SingleChildScrollView(
+                                    child: Container(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text(
+                                            'New Event',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 16),
+                                          TextField(
+                                            controller: titleController,
+                                            decoration: InputDecoration(
+                                                labelText: 'Title'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          TextField(
+                                            controller: dateController,
+                                            decoration: InputDecoration(
+                                                labelText: 'Date'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          TextField(
+                                            controller: placeController,
+                                            decoration: InputDecoration(
+                                                labelText: 'Place'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          TextField(
+                                            controller: descriptionController,
+                                            decoration: InputDecoration(
+                                                labelText: 'Description'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          _typeDropdown(),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: isPublic
+                                                  ? Color.fromARGB(
+                                                      255, 56, 24, 66)
+                                                  : Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                isPublic = !isPublic;
+                                                print(isPublic);
+                                              });
+                                            },
+                                            child: Text('Public: $isPublic',
+                                                style: TextStyle(
+                                                  color: isPublic
+                                                      ? Colors.white
+                                                      : Color.fromARGB(
+                                                          255, 56, 24, 66),
+                                                )),
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              // Get values from text fields and isPublic checkbox
+                                              createEvent();
+
+                                              // Close the bottom sheet
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: Text('Add event'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            });
+                      },
+                      label: const Text('Add event'),
+                      icon: const Icon(Icons.add),
+                    )
+                  : null);
         } else if (snapshot.hasError) {
           return SliverToBoxAdapter(child: Text('Error: ${snapshot.error}'));
         } else {
@@ -1372,10 +1756,10 @@ class _ForumPageState extends State<ForumPage> {
                       final post = posts[index];
                       return GestureDetector(
                         onTap: () {
-                          print('post[id]'+post["Post_ID"]);
-                          print('postid before'+postid);
+                          print('post[id]' + post["Post_ID"]);
+                          print('postid before' + postid);
                           postid = post["Post_ID"];
-                          print('postid after'+postid);
+                          print('postid after' + postid);
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => PostPage()),
@@ -1493,13 +1877,13 @@ class PostPage extends StatefulWidget {
 class _PostPageState extends State<PostPage> {
   final Stream<QuerySnapshot> _postinfo = FirebaseFirestore.instance
       .collection('post')
-      .where('Club_ID',isEqualTo: id)
+      .where('Club_ID', isEqualTo: id)
       .where('Post_ID', isEqualTo: postid)
       .snapshots();
 
   final Stream<QuerySnapshot> _commentsStream = FirebaseFirestore.instance
       .collection('comment')
-      .where('Club_ID',isEqualTo: id)
+      .where('Club_ID', isEqualTo: id)
       .where('Post_ID', isEqualTo: postid)
       .snapshots();
 
@@ -1641,187 +2025,6 @@ class _PostPageState extends State<PostPage> {
         },
         label: const Text('Add comment'),
         icon: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class EventCard extends StatelessWidget {
-  final String id;
-  final String name;
-  final String description;
-  final String date;
-  final String time;
-
-  EventCard({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.date,
-    required this.time,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: AppColor.sky,
-      margin: EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(id),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(description),
-            Text(date),
-            Text(time),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ForumPostCard extends StatelessWidget {
-  final String id;
-  final String title;
-  final String body;
-  final String date;
-  final String authorName;
-  final String imageUrl;
-
-  ForumPostCard({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.date,
-    required this.authorName,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.all(16),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ClubPage()),
-          );
-          // Add your action here when the Container is pressed.
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 200,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    id,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    body,
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    date,
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    authorName,
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ForumCommentCard extends StatelessWidget {
-  final String id;
-  final String comment;
-  final String date;
-  final String authorName;
-
-  ForumCommentCard({
-    required this.id,
-    required this.comment,
-    required this.date,
-    required this.authorName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: AppColor.sky,
-      margin: EdgeInsets.all(20),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(id),
-            Text(
-              'Comment by $authorName',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              comment,
-              style: TextStyle(
-                fontSize: 16,
-              ),
-            ),
-            Text(
-              date,
-              style: TextStyle(
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
