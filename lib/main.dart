@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/pages/home.dart';
 import 'package:flutter_application_1/pages/login.dart';
 import 'package:flutter_application_1/pages/rec.dart';
-import 'package:flutter_application_1/pages/signup.dart';
 import 'package:flutter_application_1/pages/welcome.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -60,7 +59,6 @@ class MyApp extends StatelessWidget {
             routes: {
               "/": (context) => const WidgetTree(),
               "/login": (context) => Login(),
-              "/signup": (context) => Singup(),
               "/home": (context) => Home(),
               "/rec": (context) => HobbiesGrid(),
             },

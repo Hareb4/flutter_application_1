@@ -7,16 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/main.dart';
 import 'package:flutter_application_1/constants/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/widget_tree.dart';
 import '../auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'func.dart';
 import '../components/component.dart';
+import 'dart:async';
 
 User? user = FirebaseAuth.instance.currentUser;
 
 String result = '';
 String id = '';
-String postid = '';
+int postid = 0;
 
 String? username;
 String? email;
@@ -27,19 +29,19 @@ List<String>? joinedClubs;
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
 
-  final User? user = Auth().currentUser;
+  // final User? user = Auth().currentUser;
 
-  Future<void> signOut() async {
-    await Auth().signOut();
-  }
+  // Future<void> signOut() async {
+  //   await Auth().signOut();
+  // }
 
-  Widget _userUid() {
-    return Text(user?.email ?? 'User email');
-  }
+  // Widget _userUid() {
+  //   return Text(user?.email ?? 'User email');
+  // }
 
-  Widget _signOutButton() {
-    return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
-  }
+  // Widget _signOutButton() {
+  //   return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
+  // }
 
   @override
   _HomeState createState() => _HomeState();
@@ -136,7 +138,7 @@ class _LoadingpageState extends State<Loadingpage> {
   Future<void> fetchall() async {
     result = '';
     id = '';
-    postid = '';
+    postid = 0;
 
     username = '';
     email = '';
@@ -709,30 +711,9 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreen createState() => _ProfileScreen();
 }
 
+// final User? user = Auth().currentUser;
+
 class _ProfileScreen extends State<ProfileScreen> {
-  final User? user = Auth().currentUser;
-
-  Future<void> signOut() async {
-    await Auth().signOut();
-    // result = '';
-    // id = '';
-    // postid = '';
-
-    // username = '';
-    // email = '';
-    // universityId = '';
-    // sex = '';
-    // joinedClubs = [];
-  }
-
-  Widget _userUid() {
-    return Text(user?.email ?? 'User email');
-  }
-
-  Widget _signOutButton() {
-    return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
-  }
-
   File? imagePicked;
   TextEditingController nameController = TextEditingController();
 
@@ -750,6 +731,21 @@ class _ProfileScreen extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> signOut() async {
+      print('why? ');
+      await Auth().signOut();
+      Navigator.pushNamed(context, '/');
+      print(FirebaseAuth.instance.currentUser);
+    }
+
+    Widget _userUid() {
+      return Text(user?.email ?? 'User email');
+    }
+
+    Widget _signOutButton() {
+      return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
+    }
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Align(
@@ -1002,6 +998,7 @@ class _ProfileScreen extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+                SizedBox(height: 5),
                 _signOutButton()
               ],
             ),
@@ -1036,6 +1033,7 @@ class _ClubPageState extends State<ClubPage> {
       onChanged: (value) {
         setState(() {
           type = value;
+          print(type);
         });
       },
       hint: Text('Select Type'),
@@ -1158,8 +1156,6 @@ class _ClubPageState extends State<ClubPage> {
                           'joined_clubs': joinedClubs,
                         });
                         setState(() {});
-
-                        // (context as Element).reassemble();
                       },
                     )
                   else
@@ -1176,9 +1172,6 @@ class _ClubPageState extends State<ClubPage> {
                           'joined_clubs': joinedClubs,
                         });
                         setState(() {});
-
-                        // (context as Element).reassemble();
-                        // Add Club button action
                       },
                     ),
                   IconButton(
@@ -1701,8 +1694,8 @@ class ForumPage extends StatefulWidget {
 }
 
 class _ForumPageState extends State<ForumPage> {
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
+  TextEditingController title = TextEditingController();
+  TextEditingController content = TextEditingController();
 
   late final File imageFile;
 
@@ -1711,161 +1704,195 @@ class _ForumPageState extends State<ForumPage> {
       .where('Club_ID', isEqualTo: id)
       .snapshots();
 
+  Future<int> getLastPostId() async {
+    final CollectionReference postCollection =
+        FirebaseFirestore.instance.collection('post');
+    final QuerySnapshot<Object?> lastPostSnapshot = await postCollection
+        .orderBy('Post_ID', descending: true)
+        .limit(1)
+        .get();
+
+    if (lastPostSnapshot.docs.isNotEmpty) {
+      print('last post id = ${lastPostSnapshot.docs.first.get('Post_ID')}');
+      return lastPostSnapshot.docs.first.get('Post_ID') as int;
+    } else {
+      return 0;
+    }
+  }
+
+  Future<void> createPost4() async {
+    int newPostid = await getLastPostId();
+    print(newPostid);
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("post").doc();
+
+    Map<String, dynamic> newpost = {
+      "Post_Title": title.text,
+      "Post_Content": content.text,
+      "Author_ID": email,
+      "Post_Date": DateTime.now().toString(),
+      "Username": username,
+      "Post_ID": newPostid + 1,
+      "Club_ID": id,
+    };
+
+    // Add the new post to the collection
+    print(newpost);
+    await documentReference.set(newpost);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(backgroundColor: AppColor.sky, title: Text('Forum'), actions: [
-        IconButton(
-            icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
-                ? Icons.dark_mode
-                : Icons.light_mode),
-            onPressed: () {
-              print("clicked swithc");
-              MyApp.themeNotifier.value =
-                  MyApp.themeNotifier.value == ThemeMode.light
-                      ? ThemeMode.dark
-                      : ThemeMode.light;
-              print(MyApp.themeNotifier.value);
-            }),
-      ]),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Posts',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+        appBar: AppBar(
+            backgroundColor: AppColor.sky,
+            title: Text('Forum'),
+            actions: [
+              IconButton(
+                  icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
+                      ? Icons.dark_mode
+                      : Icons.light_mode),
+                  onPressed: () {
+                    print("clicked swithc");
+                    MyApp.themeNotifier.value =
+                        MyApp.themeNotifier.value == ThemeMode.light
+                            ? ThemeMode.dark
+                            : ThemeMode.light;
+                    print(MyApp.themeNotifier.value);
+                  }),
+            ]),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Posts',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            StreamBuilder<QuerySnapshot>(
-              stream: _postsStream,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final posts = snapshot.data!.docs;
-                  return ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    shrinkWrap: true,
-                    itemCount: posts.length,
-                    itemBuilder: (context, index) {
-                      final post = posts[index];
-                      return GestureDetector(
-                        onTap: () {
-                          print('post[id]' + post["Post_ID"]);
-                          print('postid before' + postid);
-                          postid = post["Post_ID"];
-                          print('postid after' + postid);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => PostPage()),
-                          );
-                          // Add your action here when the Container is pressed.
-                        },
-                        child: ForumPostCard(
-                          id: post['Post_ID'],
-                          title: post['Post_Title'],
-                          body: post['Post_Contents'],
-                          date: post['Post_Date'],
-                          authorName: post["Creator_ID"],
-                          imageUrl: "",
-                        ),
-                      );
-                    },
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return CircularProgressIndicator();
-                }
-              },
-            )
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          // Add your onPressed code here!
-          await showModalBottomSheet(
-              context: context,
-              builder: (BuildContext context) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Container(
-                        padding: EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            if (imageFile != null) Image.file(imageFile),
-                            Text(
-                              'New Post',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            TextField(
-                              controller: titleController,
-                              decoration: InputDecoration(labelText: 'Title'),
-                            ),
-                            SizedBox(height: 16),
-                            TextField(
-                              controller: descriptionController,
-                              decoration:
-                                  InputDecoration(labelText: 'Description'),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Get values from text fields and isPublic checkbox
-                                _getImage();
-                              },
-                              child: Text('Add image'),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Get values from text fields and isPublic checkbox
-                                String title = titleController.text;
-                                String description = descriptionController.text;
-
-                                // Do something with the values
-                                print('Title: $title');
-                                print('Description: $description');
-
-                                // Close the bottom sheet
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Add post'),
-                            ),
-                          ],
-                        ),
-                      ),
+              StreamBuilder<QuerySnapshot>(
+                stream: _postsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final posts = snapshot.data!.docs;
+                    return ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        final post = posts[index];
+                        return GestureDetector(
+                          onTap: () {
+                            postid = post['Post_ID'];
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => PostPage()),
+                            );
+                            // Add your action here when the Container is pressed.
+                          },
+                          child: ForumPostCard(
+                            username: post['Username'],
+                            title: post['Post_Title'],
+                            body: post['Post_Content'],
+                            date: post['Post_Date'],
+                          ),
+                        );
+                      },
                     );
-                  },
-                );
-              });
-        },
-        label: const Text('Add post'),
-        icon: const Icon(Icons.add),
-      ),
-    );
-  }
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                },
+              )
+            ],
+          ),
+        ),
+        floatingActionButton:
+            Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+          FloatingActionButton.extended(
+            onPressed: () async {
+              // Add your onPressed code here!
+              await showModalBottomSheet(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return StatefulBuilder(
+                      builder: (BuildContext context, StateSetter setState) {
+                        return SingleChildScrollView(
+                          child: Container(
+                            padding: EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  'New Post',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                TextField(
+                                  controller: title,
+                                  decoration:
+                                      InputDecoration(labelText: 'Title'),
+                                ),
+                                SizedBox(height: 16),
+                                TextField(
+                                  controller: content,
+                                  decoration:
+                                      InputDecoration(labelText: 'Content'),
+                                ),
+                                SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Get values from text fields and isPublic checkbox
+                                    createPost4();
 
-  Future<void> _getImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
+                                    // Do something with the values
+                                    print('Title: $title');
+                                    print('Description: $content');
 
-    if (pickedFile != null) {
-      final File imageFile = File(pickedFile.path);
-    } else {}
+                                    // Close the bottom sheet
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('Add post'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  });
+            },
+            label: const Text('Add post'),
+            icon: const Icon(Icons.add),
+          ),
+          SizedBox(height: 5),
+          FloatingActionButton.extended(
+            onPressed: () async {
+              var collection = FirebaseFirestore.instance
+                  .collection('post')
+                  .where('Club_ID', isEqualTo: id);
+              var snapshots = await collection.get();
+              for (var doc in snapshots.docs) {
+                await doc.reference.delete();
+              }
+              setState(() {});
+            },
+            label: const Text('delete posts'),
+            icon: const Icon(Icons.delete),
+            backgroundColor: AppColor.red,
+          ),
+        ]));
   }
 }
 
@@ -1888,6 +1915,44 @@ class _PostPageState extends State<PostPage> {
       .snapshots();
 
   TextEditingController bodyController = TextEditingController();
+
+  Future<int> getLastCommentId() async {
+    final CollectionReference commentCollection =
+        FirebaseFirestore.instance.collection('comment');
+    final QuerySnapshot<Object?> lastCommentSnapshot = await commentCollection
+        .orderBy('Comment_ID', descending: true)
+        .limit(1)
+        .get();
+
+    if (lastCommentSnapshot.docs.isNotEmpty) {
+      print(
+          'last comment id = ${lastCommentSnapshot.docs.first.get('Post_ID')}');
+      return lastCommentSnapshot.docs.first.get('Comment_ID') as int;
+    } else {
+      return 0;
+    }
+  }
+
+  Future<void> createComment() async {
+    int commid = await getLastCommentId();
+    print(commid);
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("comment").doc();
+
+    Map<String, dynamic> newComment = {
+      "Comment_Content": bodyController.text,
+      "Comment_Date": DateTime.now().toString(),
+      "Post_ID": postid,
+      "Comment_ID": commid + 1,
+      "Username": username,
+      "Author_ID": email,
+      "Club_ID": id,
+    };
+
+    // Add the new post to the collection
+    print(newComment);
+    await documentReference.set(newComment);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1931,12 +1996,10 @@ class _PostPageState extends State<PostPage> {
                       snapshot.data!.docs[0].data() as Map<String, dynamic>;
 
                   return ForumPostCard(
-                    id: postInfo['Post_ID'],
+                    username: postInfo['Username'],
                     title: postInfo['Post_Title'],
-                    body: postInfo['Post_Contents'],
+                    body: postInfo['Post_Content'],
                     date: postInfo['Post_Date'],
-                    authorName: postInfo["Creator_ID"],
-                    imageUrl: "",
                   );
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
@@ -1957,9 +2020,8 @@ class _PostPageState extends State<PostPage> {
                     itemBuilder: (context, index) {
                       final comment = comments[index];
                       return ForumCommentCard(
-                        id: comment['Post_ID'],
-                        authorName: comment['Commenter_ID'],
-                        comment: comment['Comment_Contents'],
+                        username: comment['Username'],
+                        comment: comment['Comment_Content'],
                         date: comment['Comment_Date'],
                       );
                     },
@@ -2004,6 +2066,7 @@ class _PostPageState extends State<PostPage> {
                             SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {
+                                createComment();
                                 // Get values from text fields and isPublic checkbox
                                 String body = bodyController.text;
 

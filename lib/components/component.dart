@@ -1,8 +1,6 @@
-import "dart:io";
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/constants/colors.dart';
-
-
 
 class EventCard extends StatelessWidget {
   final String id;
@@ -49,102 +47,69 @@ class EventCard extends StatelessWidget {
 }
 
 class ForumPostCard extends StatelessWidget {
-  final String id;
   final String title;
   final String body;
   final String date;
-  final String authorName;
-  final String imageUrl;
+  final String username;
 
   ForumPostCard({
-    required this.id,
     required this.title,
     required this.body,
     required this.date,
-    required this.authorName,
-    required this.imageUrl,
+    required this.username,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.all(16),
-      child: GestureDetector(
-        onTap: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => ClubPage(clubId: id,)),
-          // );
-          // Add your action here when the Container is pressed.
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 200,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+                
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    id,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    body,
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    date,
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    authorName,
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class ForumCommentCard extends StatelessWidget {
-  final String id;
   final String comment;
   final String date;
-  final String authorName;
+  final String username;
 
   ForumCommentCard({
-    required this.id,
     required this.comment,
     required this.date,
-    required this.authorName,
+    required this.username,
   });
 
   @override
@@ -157,9 +122,8 @@ class ForumCommentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(id),
             Text(
-              'Comment by $authorName',
+              'Comment by $username',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
