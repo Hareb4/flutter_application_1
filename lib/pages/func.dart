@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -116,7 +117,7 @@ Future<List<String>?> getjoinedClubs() async {
     if (querySnapshot.docs.isNotEmpty) {
       final data = querySnapshot.docs.first.data();
 
-      final joinedClubs = List<String>.from(data['joined_clubs'] ?? []);
+      final joinedClubs = List<String>.from(data['joined_clubs'] ?? ['000']);
 
       return joinedClubs;
     } else {
@@ -127,4 +128,5 @@ Future<List<String>?> getjoinedClubs() async {
     return null;
   }
 }
+
 

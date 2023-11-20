@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/constants/colors.dart';
 import 'package:flutter_application_1/main.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../auth.dart';
 
 // After successful login or registration
@@ -68,7 +69,10 @@ class _LoginState extends State<Login> {
   }
 
   Widget _title() {
-    return const Text('auth');
+    return const Text(
+      'Login',
+      style: TextStyle(color: AppColor.white),
+    );
   }
 
   Widget _entryField(
@@ -130,6 +134,14 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: SizedBox(height: 5),
+        shape: ShapeBorder.lerp(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          null,
+          0,
+        ),
         title: _title(),
       ),
       body: Container(

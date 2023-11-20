@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/main.dart';
 import 'package:flutter_application_1/constants/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/constants/flutter_flow_theme.dart';
 import 'package:flutter_application_1/widget_tree.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'func.dart';
@@ -24,24 +26,11 @@ String? username;
 String? email;
 String? universityId;
 String? sex;
-List<String>? joinedClubs;
+List<String>? joinedClubs = [];
+String userImageUrl = '';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
-
-  // final User? user = Auth().currentUser;
-
-  // Future<void> signOut() async {
-  //   await Auth().signOut();
-  // }
-
-  // Widget _userUid() {
-  //   return Text(user?.email ?? 'User email');
-  // }
-
-  // Widget _signOutButton() {
-  //   return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
-  // }
 
   @override
   _HomeState createState() => _HomeState();
@@ -58,43 +47,51 @@ class _HomeState extends State<Home> {
       clubId: id,
     ),
   ];
+  PreferredSizeWidget h = AppBar(
+      shape: ShapeBorder.lerp(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        null,
+        0,
+      ),
+      shadowColor: AppColor.darkblue,
+      title: const Text(
+        "Clubz",
+        style: TextStyle(
+          color: AppColor.darkblue,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: AppColor.lightsky,
+      centerTitle: true,
+      automaticallyImplyLeading: false, // Remove the default back arrow
+      actions: [
+        IconButton(
+          icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
+              ? Icons.dark_mode
+              : Icons.light_mode),
+          onPressed: () {
+            MyApp.themeNotifier.value =
+                MyApp.themeNotifier.value == ThemeMode.light
+                    ? ThemeMode.dark
+                    : ThemeMode.light;
+          },
+        ),
+      ],
+      elevation: 0 // Set your desired padding
+      );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Clubz",
-          style: TextStyle(
-            color: AppColor.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppColor.darkblue,
-        centerTitle: true,
-        automaticallyImplyLeading: false, // Remove the default back arrow
-        actions: [
-          IconButton(
-              icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
-                  ? Icons.dark_mode
-                  : Icons.light_mode),
-              onPressed: () {
-                print("clicked swithc");
-                MyApp.themeNotifier.value =
-                    MyApp.themeNotifier.value == ThemeMode.light
-                        ? ThemeMode.dark
-                        : ThemeMode.light;
-                print(MyApp.themeNotifier.value);
-              })
-        ],
-        elevation: 0,
-      ),
+      appBar: h,
       body: _tabs[_currentIndex],
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.thumb_up),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {},
+      //   child: const Icon(Icons.thumb_up),
+      // ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -133,7 +130,17 @@ class _LoadingpageState extends State<Loadingpage> {
   void initState() {
     super.initState();
     fetchall();
+    // fetchimage();
   }
+
+  Future<void> fetchimage() async {
+    Reference storageReference =
+        FirebaseStorage.instance.ref().child('images/$email.jpg');
+    userImageUrl = await storageReference.getDownloadURL();
+    print('the url image 3 : ' + userImageUrl);
+  }
+
+  // Function to authenticate and retrieve user data
 
   Future<void> fetchall() async {
     result = '';
@@ -145,6 +152,8 @@ class _LoadingpageState extends State<Loadingpage> {
     universityId = '';
     sex = '';
     joinedClubs = [];
+    userImageUrl = '';
+
     final fetchedUsername = await getUsername();
     final fetchEmail = await getEmail();
     final fetchUniId = await getUniversityId();
@@ -153,22 +162,25 @@ class _LoadingpageState extends State<Loadingpage> {
 
     setState(() {
       username = fetchedUsername;
-      print('in setState username = $username');
       email = fetchEmail;
-      print('in setState email = $email');
       universityId = fetchUniId;
-      print('in setState universityId = $universityId');
       sex = fetchSex;
-      print('in setState sex = $sex');
       joinedClubs = fetchJoinedClubs;
-      print('in setState joined clubs = $joinedClubs');
+      // userImageUrl = userImageUrl1;
+    });
+
+    Reference storageReference =
+        FirebaseStorage.instance.ref().child('images/$email.jpg');
+    final userImageUrl1 = await storageReference.getDownloadURL();
+
+    setState(() {
+      userImageUrl = userImageUrl1;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (joinedClubs!.isNotEmpty) {
-      print('before home screen = $joinedClubs');
+    if (userImageUrl.isNotEmpty) {
       return HomeScreen();
     } else {
       return CircularProgressIndicator();
@@ -182,41 +194,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   fetchall();
-  // }
-
-  // Future<void> fetchall() async {
-  //   final fetchedUsername = await getUsername();
-  //   final fetchEmail = await getEmail();
-  //   final fetchUniId = await getUniversityId();
-  //   final fetchSex = await getSex();
-  //   final fetchJoinedClubs = await getjoinedClubs();
-
-  //   setState(() {
-  //     username = fetchedUsername;
-  //     print('in setState username = $username');
-  //     email = fetchEmail;
-  //     print('in setState email = $email');
-  //     universityId = fetchUniId;
-  //     print('in setState universityId = $universityId');
-  //     sex = fetchSex;
-  //     print('in setState sex = $sex');
-  //     joinedClubs = fetchJoinedClubs;
-  //     print('in setState joined clubs = $joinedClubs');
-  //   });
-  // }
-
-  final Stream<QuerySnapshot> _clubsSnapshots = FirebaseFirestore.instance
-      .collection('clubs')
-      .where('Club_ID', arrayContainsAny: joinedClubs)
-      .snapshots();
-
   final Stream<QuerySnapshot> _publicEvents = FirebaseFirestore.instance
       .collection('event')
-      .where('isPublic', isEqualTo: "true")
+      .where('isPublic', isEqualTo: true)
       .snapshots();
 
   final Stream<QuerySnapshot> _privateEventsSnapshots = FirebaseFirestore
@@ -225,28 +205,45 @@ class _HomeScreenState extends State<HomeScreen> {
       .where('isPublic', isEqualTo: 'false')
       .snapshots();
 
+  void getImage() async {
+    print('the url image 2 : ' + userImageUrl);
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('after go home screen = $joinedClubs');
-
+    getImage();
+    print('the url image 1 : ' + userImageUrl);
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 24, bottom: 20, top: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Hi ${username}!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 24, bottom: 20, top: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Hi $username!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(
+                  width: 5,
+                ),
+                if (userImageUrl.isNotEmpty)
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: NetworkImage(
+                        userImageUrl), // Adjust the radius as needed
+                  ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.only(left: 24),
@@ -264,51 +261,25 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   final events = snapshot.data!.docs;
-                  print(events.length);
                   return ListView.builder(
                     scrollDirection: Axis.vertical,
                     shrinkWrap: true,
                     itemCount: events.length,
                     itemBuilder: (context, index) {
                       final event = events[index];
-                      print(event['Event_Name']);
                       return GestureDetector(
                         onTap: () {
                           // Add your action here when the Container is pressed.
                         },
-                        child: Container(
-                          margin: EdgeInsets.all(15),
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: AppColor.sky,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 16, left: 16),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  event['Event_Name'],
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF22005d),
-                                  ),
-                                ),
-                                Text(
-                                  event['Event_Date'],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF22005d),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        child: EventCard(
+                            id: event['Club_ID'],
+                            name: event['Event_Title'],
+                            place: event['Event_Place'],
+                            description: event['Event_Description'],
+                            date: event['Event_Date'],
+                            time: event['Event_Time'],
+                            type: event['Event_Type'],
+                            clubName: event['Club_Name']),
                       );
                     },
                   );
@@ -337,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
               stream: FirebaseFirestore.instance
                   .collection('event')
                   .where('isPublic', isEqualTo: 'false')
-                  .where('Club_ID', whereIn: joinedClubs)
+                  .where('Club_ID', arrayContains: joinedClubs)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
@@ -349,21 +320,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   } else {
                     final events = snapshot.data!.docs;
                     if (events.isEmpty) {
-                      return Text('No clubs found.');
+                      return Text('No Events found.');
                     }
-                    print('events.length = ${events.length}');
                     return ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      itemCount: events.length,
-                      itemBuilder: (context, index) {
-                        final event = events[index];
-                        // print(club['Club_Name']);
-                        // print(club['Club_ID']);
-                        // print(joinedClubs?[0]);
-                        // print(club['Club_ID'] == joinedClubs?[0]);
-                        // joinedClubs!.contains(event['Club_ID'])
-                        if (true) {
+                        scrollDirection: Axis.vertical,
+                        shrinkWrap: true,
+                        itemCount: events.length,
+                        itemBuilder: (context, index) {
+                          final event = events[index];
                           return GestureDetector(
                             onTap: () {
                               // Add your action here when the Container is pressed.
@@ -402,9 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           );
-                        }
-                      },
-                    );
+                        });
                   }
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
@@ -430,13 +392,23 @@ class _HomeScreenState extends State<HomeScreen> {
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('clubs')
-                  .where('Club_ID', whereIn: joinedClubs)
+                  // .where('Club_ID', whereIn: joinedClubs)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  print('joinedclubs after snapshot $joinedClubs');
-                  print('snapshot ${snapshot.data!.docs}');
+                  // print('joinedclubs after snapshot $joinedClubs');
                   final clubs = snapshot.data!.docs;
+                  // print('club id 0 = ${clubs[0]['Club_ID']}');
+                  // print('joined clubs = ${joinedClubs}');
+                  // print(
+                  //     'true, false = ${!(joinedClubs!.contains(clubs[1]['Club_ID']))}');
+                  // if (!(joinedClubs!.contains(clubs[1]['Club_ID']))) {
+                  //   return Text('No Clubs found.');
+                  // }
+                  if (clubs.isEmpty) {
+                    return Text('No Clubs found.');
+                  }
+
                   return ListView.builder(
                     scrollDirection: Axis.vertical,
                     shrinkWrap: true,
@@ -445,50 +417,43 @@ class _HomeScreenState extends State<HomeScreen> {
                       final club = clubs[index];
                       // print(club['Club_Name']);
                       // print(club['Club_ID']);
-                      print(joinedClubs?[0]);
+                      // print(joinedClubs?[0]);
                       // print(club['Club_ID'] == joinedClubs?[0]);
+
                       // var art = joinedClubs!.contains(club['Club_ID']);
-                      if (true) {
+                      var art = joinedClubs!
+                          .where((element) => element.contains(club['Club_ID']))
+                          .toList();
+                      bool art2 = art.isNotEmpty;
+                      if (art2) {
                         return GestureDetector(
                           onTap: () {
+                            id = club['Club_ID'];
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ClubPage(
+                                        clubId: id,
+                                      )),
+                            );
                             // Add your action here when the Container is pressed.
                           },
                           child: Container(
                             margin: EdgeInsets.all(15),
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: AppColor.sky,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 16, left: 16),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    club['Club_Name'],
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF22005d),
-                                    ),
-                                  ),
-                                  Text(
-                                    club['Club_Description'],
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF22005d),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: ClubCard(
+                              id: club['Club_ID'],
+                              name: club['Club_Name'],
+                              category: club['Club_Category'],
+                              numevents: '3',
+                              desc: club['Club_Description'],
                             ),
                           ),
                         );
                       } else {
-                        return Container(); // Return an empty container instead of null
+                        return SizedBox(
+                          height: 0,
+                          width: 0,
+                        );
                       }
                     },
                   );
@@ -545,7 +510,7 @@ class _ClubsScreenState extends State<ClubsScreen> {
                             Icons.search,
                             color: AppColor.darkblue,
                           ),
-                          hintText: "hareb",
+                          hintText: "Search",
                           fillColor: AppColor.darkblue,
                           border: InputBorder.none),
                       onChanged: (value) {
@@ -573,78 +538,73 @@ class _ClubsScreenState extends State<ClubsScreen> {
                       MainAxisAlignment.center, // Center children vertically
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      margin: EdgeInsets.all(8.0), // Add margin to create space
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                          fixedSize: MaterialStateProperty.all(
-                              Size(100, 20)), // Width and height values
-                        ),
-                        child: Row(
-                          children: [
-                            Text("sports"),
-                          ],
-                        ),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          streamQuery = FirebaseFirestore.instance
+                              .collection('clubs')
+                              .where('Club_Category', isEqualTo: 'Sports')
+                              .snapshots();
+                          debugPrint('Received click');
+                        });
+                      },
+                      child: const Text('Sports'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: OutlinedButton(
                         onPressed: () {
-                          selectedCategory = 'Sports';
-                          // Do something when the button is pressed.
+                          setState(() {
+                            streamQuery = FirebaseFirestore.instance
+                                .collection('clubs')
+                                .where('Club_Category', isEqualTo: 'Social')
+                                .snapshots();
+                            debugPrint('Received click');
+                          });
                         },
+                        child: const Text('Social'),
                       ),
                     ),
-                    Container(
-                      margin: EdgeInsets.all(8.0), // Add margin to create space
-                      child: ElevatedButton(
-                        child: Row(
-                          children: [
-                            Text("Social"),
-                          ],
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: OutlinedButton(
                         onPressed: () {
-                          selectedCategory = 'Social';
-                          // Do something when the button is pressed.
+                          setState(() {
+                            streamQuery = FirebaseFirestore.instance
+                                .collection('clubs')
+                                .where('Club_Category',
+                                    isEqualTo: 'Educational')
+                                .snapshots();
+                            debugPrint('Received click');
+                          });
                         },
+                        child: const Text('Educational'),
                       ),
                     ),
-                    Container(
-                      margin: EdgeInsets.all(8.0), // Add margin to create space
-                      child: ElevatedButton(
-                        child: Row(
-                          children: [
-                            Text("Educational"),
-                          ],
-                        ),
-                        onPressed: () {
-                          selectedCategory = 'Educational';
-                          // Do something when the button is pressed.
-                        },
-                      ),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          streamQuery = FirebaseFirestore.instance
+                              .collection('clubs')
+                              .snapshots();
+                        });
+                      },
+                      child: const Text('all'),
                     ),
                   ],
                 ),
+                FilledButton.tonal(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HobbiesGrid()),
+                    );
+                  },
+                  child: const Text('Recommend me a club'),
+                ),
                 SizedBox(
-                  height: 23,
-                ),
-                Container(
-                  margin: EdgeInsets.all(8.0), // Add margin to create space
-                  child: ElevatedButton(
-                    style: ButtonStyle(
-                      fixedSize: MaterialStateProperty.all(
-                          Size(100, 20)), // Width and height values
-                    ),
-                    child: Row(
-                      children: [
-                        Text("recomend me club"),
-                      ],
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => HobbiesGrid()),
-                      );
-                      // Do something when the button is pressed.
-                    },
-                  ),
-                ),
+                  height: 10,
+                )
               ],
             ),
           ),
@@ -660,32 +620,26 @@ class _ClubsScreenState extends State<ClubsScreen> {
                       final club = clubs[index];
 
                       return GestureDetector(
-                        onTap: () {
-                          id = club['Club_ID'];
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ClubPage(
-                                      clubId: id,
-                                    )),
-                          );
-                        },
-                        child: Container(
-                          height: 51,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFD9D9D9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: EdgeInsets.all(8),
-                          margin: EdgeInsets.only(
-                              bottom: 10, left: 20, right: 20, top: 0),
-                          child: Text(club['Club_Name']),
-                        ),
-                      );
-                      // } else {
-                      //   return Container();
-                      // }
+                          onTap: () {
+                            id = club['Club_ID'];
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ClubPage(
+                                        clubId: id,
+                                      )),
+                            );
+                          },
+                          child: Container(
+                            margin: EdgeInsets.only(left: 15, right: 15),
+                            child: ClubCard(
+                              id: club['Club_ID'],
+                              name: club['Club_Name'],
+                              category: club['Club_Category'],
+                              numevents: '3',
+                              desc: club['Club_Description'],
+                            ),
+                          ));
                     },
                     childCount: clubs.length,
                   ),
@@ -711,11 +665,40 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreen createState() => _ProfileScreen();
 }
 
-// final User? user = Auth().currentUser;
-
 class _ProfileScreen extends State<ProfileScreen> {
+  File? _image;
+  String? _url;
+
   File? imagePicked;
-  TextEditingController nameController = TextEditingController();
+
+  void galleryImage2() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedImage != null) {
+      final pickedImageFile = File(pickedImage.path);
+
+      final storage = FirebaseStorage.instance;
+      final Reference storageReference =
+          storage.ref().child('images/').child('$email.jpg');
+
+      UploadTask uploadTask = storageReference.putFile(pickedImageFile);
+
+      uploadTask.then((res) {
+        // Image has been uploaded to Firebase Storage. You can do something with the URL.
+        storageReference.getDownloadURL().then((url) {
+          setState(() {
+            imagePicked = pickedImageFile;
+            var imageUrl = url;
+            // Store the URL for later use or display.
+          });
+          Navigator.pop(context);
+        });
+      });
+    }
+  }
 
   void gallaryImage() async {
     final picker = ImagePicker();
@@ -732,10 +715,8 @@ class _ProfileScreen extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     Future<void> signOut() async {
-      print('why? ');
       await Auth().signOut();
       Navigator.pushNamed(context, '/');
-      print(FirebaseAuth.instance.currentUser);
     }
 
     Widget _userUid() {
@@ -753,7 +734,6 @@ class _ProfileScreen extends State<ProfileScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: 20),
                 Stack(
                   children: [
                     Container(
@@ -793,7 +773,7 @@ class _ProfileScreen extends State<ProfileScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       TextButton.icon(
-                                        onPressed: gallaryImage,
+                                        onPressed: galleryImage2,
                                         label: Text(
                                           'Gallery',
                                           style: TextStyle(
@@ -818,75 +798,65 @@ class _ProfileScreen extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  'John Doe', // Replace with the user's name
+                  '$username', // Replace with the user's name
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 SizedBox(height: 10),
-                Text(
-                  'Web Developer', // Replace with the user's occupation
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text("hareb"),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return StatefulBuilder(
-                            builder:
-                                (BuildContext context, StateSetter setState) {
-                              return SingleChildScrollView(
-                                child: Container(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Text(
-                                        'New Event',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(height: 16),
-                                      TextField(
-                                        controller: nameController,
-                                        decoration:
-                                            InputDecoration(labelText: 'Name'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          // Get values from text fields and isPublic checkbox
-                                          gallaryImage();
-                                        },
-                                        child: Text('Add image'),
-                                      ),
-                                      SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          // Get values from text fields and isPublic checkbox
-                                        },
-                                        child: Text('Edit profile'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        });
-                  },
-                  child: Text('Edit Profile'),
-                ),
+                // ElevatedButton(
+                //   onPressed: () {
+                //     showModalBottomSheet(
+                //         context: context,
+                //         builder: (BuildContext context) {
+                //           return StatefulBuilder(
+                //             builder:
+                //                 (BuildContext context, StateSetter setState) {
+                //               return SingleChildScrollView(
+                //                 child: Container(
+                //                   padding: EdgeInsets.all(16.0),
+                //                   child: Column(
+                //                     mainAxisSize: MainAxisSize.min,
+                //                     children: <Widget>[
+                //                       Text(
+                //                         'New Event',
+                //                         style: TextStyle(
+                //                           fontSize: 20,
+                //                           fontWeight: FontWeight.bold,
+                //                         ),
+                //                       ),
+                //                       SizedBox(height: 16),
+                //                       TextField(
+                //                         controller: nameController,
+                //                         decoration:
+                //                             InputDecoration(labelText: 'Name'),
+                //                       ),
+                //                       ElevatedButton(
+                //                         onPressed: () {
+                //                           // Get values from text fields and isPublic checkbox
+                //                           gallaryImage();
+                //                         },
+                //                         child: Text('Add image'),
+                //                       ),
+                //                       SizedBox(height: 16),
+                //                       ElevatedButton(
+                //                         onPressed: () {
+                //                           Navigator.of(context).pop();
+                //                           // Get values from text fields and isPublic checkbox
+                //                         },
+                //                         child: Text('Edit profile'),
+                //                       ),
+                //                     ],
+                //                   ),
+                //                 ),
+                //               );
+                //             },
+                //           );
+                //         });
+                //   },
+                //   child: Text('Edit Profile'),
+                // ),
                 SizedBox(
                   height: 8,
                 ),
@@ -896,109 +866,165 @@ class _ProfileScreen extends State<ProfileScreen> {
                       MainAxisAlignment.center, // Center children vertically
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      margin: EdgeInsets.all(8.0), // Add margin to create space
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                          fixedSize: MaterialStateProperty.all(
-                              Size(87, 20)), // Width and height values
-                        ),
-                        child: Row(
-                          children: [
-                            Text("Clubs"),
-                          ],
-                        ),
-                        onPressed: () {
-                          // Do something when the button is pressed.
-                        },
-                      ),
+                    ElevatedButton(onPressed: () {}, child: Text('Clubs')),
+                    SizedBox(
+                      width: 10,
                     ),
-                    Container(
-                      margin: EdgeInsets.all(8.0), // Add margin to create space
-                      child: ElevatedButton(
-                        child: Row(
-                          children: [
-                            Text("Events"),
-                          ],
-                        ),
-                        onPressed: () {
-                          // Do something when the button is pressed.
-                        },
-                      ),
-                    ),
+                    ElevatedButton(onPressed: () {}, child: Text('Events'))
                   ],
                 ),
                 SizedBox(
-                  height: 23,
+                  height: 8,
                 ),
-                Container(
-                  width: 350,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16, left: 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Main Text - Club Name',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Date',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('clubs')
+                      // .where('Club_ID', whereIn: joinedClubs)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      // print('joinedclubs after snapshot $joinedClubs');
+                      final clubs = snapshot.data!.docs;
+                      // print('club id 0 = ${clubs[0]['Club_ID']}');
+                      // print('joined clubs = ${joinedClubs}');
+                      // print(
+                      //     'true, false = ${!(joinedClubs!.contains(clubs[1]['Club_ID']))}');
+                      // if (!(joinedClubs!.contains(clubs[1]['Club_ID']))) {
+                      //   return Text('No Clubs found.');
+                      // }
+                      if (clubs.isEmpty) {
+                        return Text('No Clubs found.');
+                      }
+
+                      return ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        shrinkWrap: true,
+                        itemCount: clubs.length,
+                        itemBuilder: (context, index) {
+                          final club = clubs[index];
+                          // print(club['Club_Name']);
+                          // print(club['Club_ID']);
+                          // print(joinedClubs?[0]);
+                          // print(club['Club_ID'] == joinedClubs?[0]);
+
+                          // var art = joinedClubs!.contains(club['Club_ID']);
+                          var art = joinedClubs!
+                              .where((element) =>
+                                  element.contains(club['Club_ID']))
+                              .toList();
+                          bool art2 = art.isNotEmpty;
+                          if (art2) {
+                            return GestureDetector(
+                              onTap: () {
+                                id = club['Club_ID'];
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ClubPage(
+                                            clubId: id,
+                                          )),
+                                );
+                                // Add your action here when the Container is pressed.
+                              },
+                              child: Container(
+                                margin: EdgeInsets.all(15),
+                                child: ClubCard(
+                                  id: club['Club_ID'],
+                                  name: club['Club_Name'],
+                                  category: club['Club_Category'],
+                                  numevents: '3',
+                                  desc: club['Club_Description'],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return SizedBox(
+                              height: 0,
+                              width: 0,
+                            );
+                          }
+                        },
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return CircularProgressIndicator();
+                    }
+                  },
                 ),
-                SizedBox(
-                  height: 17,
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('event')
+                      .where('isPublic', isEqualTo: 'false')
+                      .where('Club_ID', arrayContains: joinedClubs)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        // While data is loading, show a loading indicator.
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      } else {
+                        final events = snapshot.data!.docs;
+                        if (events.isEmpty) {
+                          return Text('No Events found.');
+                        }
+                        return ListView.builder(
+                            scrollDirection: Axis.vertical,
+                            shrinkWrap: true,
+                            itemCount: events.length,
+                            itemBuilder: (context, index) {
+                              final event = events[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  // Add your action here when the Container is pressed.
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.all(15),
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: AppColor.sky,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                        bottom: 16, left: 16),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          event['Event_Name'],
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF22005d),
+                                          ),
+                                        ),
+                                        Text(
+                                          event['Event_Description'],
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF22005d),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            });
+                      }
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return CircularProgressIndicator();
+                    }
+                  },
                 ),
-                Container(
-                  width: 350,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16, left: 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Main Text - Club Name',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Date',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 5),
+                SizedBox(height: 10),
                 _signOutButton()
               ],
             ),
@@ -1020,6 +1046,7 @@ class ClubPage extends StatefulWidget {
 
 class _ClubPageState extends State<ClubPage> {
   String? type;
+  String? clubName;
 
   Widget _typeDropdown() {
     return DropdownButton<String>(
@@ -1033,7 +1060,6 @@ class _ClubPageState extends State<ClubPage> {
       onChanged: (value) {
         setState(() {
           type = value;
-          print(type);
         });
       },
       hint: Text('Select Type'),
@@ -1051,15 +1077,52 @@ class _ClubPageState extends State<ClubPage> {
       "Event_Place": placeController.text,
       "Club_ID": id,
       "Event_Date": dateController.text,
+      "Event_Time": timeController.text,
+      "Club_Name": clubName,
       "isPublic": isPublic,
     };
 
     documentReference.set(event);
   }
 
+  Future<void> _selectTime(BuildContext context) async {
+    TimeOfDay selectedTime = TimeOfDay.now();
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+
+    if (picked != null && picked != selectedTime) {
+      setState(() {
+        selectedTime = picked;
+        timeController.text = selectedTime.format(context);
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime selectedDate = DateTime.now();
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+        dateController.text = selectedDate.toString().substring(0, 11);
+      });
+    }
+  }
+
   TextEditingController titleController = TextEditingController();
 
   TextEditingController dateController = TextEditingController();
+  TextEditingController timeController = TextEditingController();
 
   TextEditingController placeController = TextEditingController();
 
@@ -1079,28 +1142,9 @@ class _ClubPageState extends State<ClubPage> {
       .where('Club_ID', isEqualTo: id)
       .snapshots();
 
-  Future<void> _updateJoinedClubs(String newClubId) async {
-    // Get the user document.
-    final userDocument = await FirebaseFirestore.instance
-        .collection('users')
-        .where('Email', isEqualTo: email)
-        .get();
-
-    // Get the joinedClubs list from the user document.
-
-    // Add the new club ID to the joinedClubs list.
-    joinedClubs!.add(id);
-
-    // Update the user document with the new joinedClubs list.
-    await FirebaseFirestore.instance.collection('users').doc(username).update({
-      'joined_clubs': joinedClubs,
-    });
-  }
-
   Widget build(BuildContext context) {
     String clid = widget.clubId;
 
-    print("club id = $clid");
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('clubs')
@@ -1111,10 +1155,8 @@ class _ClubPageState extends State<ClubPage> {
           final clubInfo =
               snapshot.data!.docs[0].data() as Map<String, dynamic>;
 
-          if (isAuth) {
-            setState(() {
-              isAuth = false; // Or true, depending on your condition
-            });
+          if (clubInfo['Club_Leader'] == email) {
+            isAuth = true; // Or true, depending on your condition
           }
 
           return Scaffold(
@@ -1137,12 +1179,10 @@ class _ClubPageState extends State<ClubPage> {
                           ? Icons.dark_mode
                           : Icons.light_mode),
                       onPressed: () {
-                        print("clicked swithc");
                         MyApp.themeNotifier.value =
                             MyApp.themeNotifier.value == ThemeMode.light
                                 ? ThemeMode.dark
                                 : ThemeMode.light;
-                        print(MyApp.themeNotifier.value);
                       }),
                   if (!joinedClubs!.contains(clid))
                     IconButton(
@@ -1162,8 +1202,6 @@ class _ClubPageState extends State<ClubPage> {
                     IconButton(
                       icon: Icon(Icons.logout),
                       onPressed: () async {
-                        print('logout email');
-                        print(clid);
                         joinedClubs!.remove(clid);
                         await FirebaseFirestore.instance
                             .collection('users')
@@ -1514,40 +1552,95 @@ class _ClubPageState extends State<ClubPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ForumPage()),
-                        );
-                        // Add your action here when the Container is pressed.
-                      },
-                      child: Container(
-                        margin: EdgeInsets.all(16),
-                        width: 350,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: AppColor.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16, left: 16),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Forum',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForumPage()),
+                          );
+                          // Add your action here when the Container is pressed.
+                        },
+                        child: // Generated code for this Container Widget...
+                            Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: double.infinity,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF39D2C0),
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(12),
+                                bottomRight: Radius.circular(12),
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
                               ),
-                            ],
+                            ),
+                            child: Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(
+                                  12, 12, 12, 12),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: Color(0x98FFFFFF),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    alignment: AlignmentDirectional(0.00, 0.00),
+                                    child: Icon(
+                                      Icons.people_alt_outlined,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Forum',
+                                    style: FlutterFlowTheme.of(context)
+                                        .titleMedium
+                                        .override(
+                                          fontFamily: 'Readex Pro',
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                  ),
+                                  Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(
+                                          0, 0, 0, 0),
+                                      child: Row(
+                                          mainAxisSize: MainAxisSize.max,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '12 posts',
+                                              style: FlutterFlowTheme.of(
+                                                      context)
+                                                  .titleSmall
+                                                  .override(
+                                                    fontFamily: 'Readex Pro',
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                            ),
+                                            Icon(
+                                              Icons
+                                                  .keyboard_arrow_right_rounded,
+                                              color: Color(0xFF57636C),
+                                              size: 24,
+                                            )
+                                          ]))
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
+                        )),
                   ],
                 )),
                 StreamBuilder<QuerySnapshot>(
@@ -1566,10 +1659,13 @@ class _ClubPageState extends State<ClubPage> {
                               },
                               child: EventCard(
                                   id: event['Club_ID'],
-                                  name: event['Event_Name'],
-                                  description: event['Event_description'],
+                                  name: event['Event_Title'],
+                                  place: event['Event_Place'],
+                                  description: event['Event_Description'],
                                   date: event['Event_Date'],
-                                  time: '25:00'),
+                                  time: event['Event_Time'],
+                                  type: event['Event_Type'],
+                                  clubName: event['Club_Name']),
                             );
                           },
                           childCount: events.length,
@@ -1615,12 +1711,6 @@ class _ClubPageState extends State<ClubPage> {
                                           ),
                                           SizedBox(height: 16),
                                           TextField(
-                                            controller: dateController,
-                                            decoration: InputDecoration(
-                                                labelText: 'Date'),
-                                          ),
-                                          SizedBox(height: 16),
-                                          TextField(
                                             controller: placeController,
                                             decoration: InputDecoration(
                                                 labelText: 'Place'),
@@ -1630,6 +1720,20 @@ class _ClubPageState extends State<ClubPage> {
                                             controller: descriptionController,
                                             decoration: InputDecoration(
                                                 labelText: 'Description'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              _selectDate(context);
+                                            },
+                                            child: Text('Pick a Date'),
+                                          ),
+                                          SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              _selectTime(context);
+                                            },
+                                            child: Text('Pick a Time'),
                                           ),
                                           SizedBox(height: 16),
                                           _typeDropdown(),
@@ -1644,7 +1748,6 @@ class _ClubPageState extends State<ClubPage> {
                                             onPressed: () {
                                               setState(() {
                                                 isPublic = !isPublic;
-                                                print(isPublic);
                                               });
                                             },
                                             child: Text('Public: $isPublic',
@@ -1656,9 +1759,10 @@ class _ClubPageState extends State<ClubPage> {
                                                 )),
                                           ),
                                           SizedBox(height: 16),
-                                          ElevatedButton(
+                                          FilledButton(
                                             onPressed: () {
                                               // Get values from text fields and isPublic checkbox
+                                              clubName = clubInfo['Club_Name'];
                                               createEvent();
 
                                               // Close the bottom sheet
@@ -1713,7 +1817,6 @@ class _ForumPageState extends State<ForumPage> {
         .get();
 
     if (lastPostSnapshot.docs.isNotEmpty) {
-      print('last post id = ${lastPostSnapshot.docs.first.get('Post_ID')}');
       return lastPostSnapshot.docs.first.get('Post_ID') as int;
     } else {
       return 0;
@@ -1722,7 +1825,6 @@ class _ForumPageState extends State<ForumPage> {
 
   Future<void> createPost4() async {
     int newPostid = await getLastPostId();
-    print(newPostid);
     DocumentReference documentReference =
         FirebaseFirestore.instance.collection("post").doc();
 
@@ -1734,11 +1836,31 @@ class _ForumPageState extends State<ForumPage> {
       "Username": username,
       "Post_ID": newPostid + 1,
       "Club_ID": id,
+      "isEdited": false,
     };
 
     // Add the new post to the collection
-    print(newpost);
     await documentReference.set(newpost);
+  }
+
+  void deletePost(int postID) async {
+    try {
+      // Reference to the 'posts' collection
+      CollectionReference posts =
+          FirebaseFirestore.instance.collection('posts');
+
+      // Reference to the document with the specified postID
+      DocumentReference postRef = posts.doc(postID.toString());
+
+      // Delete the document
+      setState(() async {
+        await postRef.delete();
+      });
+
+      print('Post deleted successfully');
+    } catch (e) {
+      print('Error deleting post: $e');
+    }
   }
 
   @override
@@ -1753,12 +1875,10 @@ class _ForumPageState extends State<ForumPage> {
                       ? Icons.dark_mode
                       : Icons.light_mode),
                   onPressed: () {
-                    print("clicked swithc");
                     MyApp.themeNotifier.value =
                         MyApp.themeNotifier.value == ThemeMode.light
                             ? ThemeMode.dark
                             : ThemeMode.light;
-                    print(MyApp.themeNotifier.value);
                   }),
             ]),
         body: SingleChildScrollView(
@@ -1786,6 +1906,17 @@ class _ForumPageState extends State<ForumPage> {
                       itemCount: posts.length,
                       itemBuilder: (context, index) {
                         final post = posts[index];
+                        var isAuth = false;
+                        var isEdited = false;
+
+                        if (post['Author_ID'] == email) {
+                          isAuth = true;
+                        }
+                        final Stream<QuerySnapshot> _postsStream =
+                            FirebaseFirestore.instance
+                                .collection('post')
+                                .where('Post_ID', isEqualTo: id)
+                                .snapshots();
                         return GestureDetector(
                           onTap: () {
                             postid = post['Post_ID'];
@@ -1797,11 +1928,61 @@ class _ForumPageState extends State<ForumPage> {
                             // Add your action here when the Container is pressed.
                           },
                           child: ForumPostCard(
-                            username: post['Username'],
-                            title: post['Post_Title'],
-                            body: post['Post_Content'],
-                            date: post['Post_Date'],
-                          ),
+                              username: post['Username'],
+                              title: post['Post_Title'],
+                              body: post['Post_Content'],
+                              date: post['Post_Date'],
+                              onDelete: () => {
+                                    FirebaseFirestore.instance
+                                        .collection('post')
+                                        .where('Post_ID',
+                                            isEqualTo: post[
+                                                'Post_ID']) // Filter documents based on Post_ID
+                                        .get() // Retrieve the matching documents
+                                        .then((QuerySnapshot snapshot) {
+                                      print(snapshot.docs);
+                                      if (snapshot.docs.isNotEmpty) {
+                                        // Check if there are any matching documents
+                                        print(snapshot.docs);
+                                        snapshot.docs.forEach(
+                                            (DocumentSnapshot document) {
+                                          // Iterate over matching documents
+                                          print(document);
+                                          document.reference
+                                              .delete(); // Delete the document using its reference
+                                        });
+                                      } else {
+                                        print(
+                                            'No documents found with Post_ID: ${post['Post_ID']}'); // No matching documents found
+                                      }
+                                    }),
+                                    FirebaseFirestore.instance
+                                        .collection('comments')
+                                        .where('Post_ID',
+                                            isEqualTo: post[
+                                                'Post_ID']) // Filter documents based on Post_ID
+                                        .get() // Retrieve the matching documents
+                                        .then((QuerySnapshot snapshot) {
+                                      print(snapshot.docs);
+                                      if (snapshot.docs.isNotEmpty) {
+                                        // Check if there are any matching documents
+                                        print(snapshot.docs);
+                                        snapshot.docs.forEach(
+                                            (DocumentSnapshot document) {
+                                          // Iterate over matching documents
+                                          print(document);
+                                          document.reference
+                                              .delete(); // Delete the document using its reference
+                                        });
+                                      } else {
+                                        print(
+                                            'No documents found with Post_ID: ${post['Post_ID']}'); // No matching documents found
+                                      }
+                                    })
+                                  },
+                              onEdit: () {},
+                              isEdited: isEdited,
+                              isAuth: isAuth),
                         );
                       },
                     );
@@ -1857,8 +2038,6 @@ class _ForumPageState extends State<ForumPage> {
                                     createPost4();
 
                                     // Do something with the values
-                                    print('Title: $title');
-                                    print('Description: $content');
 
                                     // Close the bottom sheet
                                     Navigator.of(context).pop();
@@ -1909,7 +2088,7 @@ class _PostPageState extends State<PostPage> {
       .snapshots();
 
   final Stream<QuerySnapshot> _commentsStream = FirebaseFirestore.instance
-      .collection('comment')
+      .collection('comments')
       .where('Club_ID', isEqualTo: id)
       .where('Post_ID', isEqualTo: postid)
       .snapshots();
@@ -1918,15 +2097,13 @@ class _PostPageState extends State<PostPage> {
 
   Future<int> getLastCommentId() async {
     final CollectionReference commentCollection =
-        FirebaseFirestore.instance.collection('comment');
+        FirebaseFirestore.instance.collection('comments');
     final QuerySnapshot<Object?> lastCommentSnapshot = await commentCollection
         .orderBy('Comment_ID', descending: true)
         .limit(1)
         .get();
 
     if (lastCommentSnapshot.docs.isNotEmpty) {
-      print(
-          'last comment id = ${lastCommentSnapshot.docs.first.get('Post_ID')}');
       return lastCommentSnapshot.docs.first.get('Comment_ID') as int;
     } else {
       return 0;
@@ -1935,9 +2112,8 @@ class _PostPageState extends State<PostPage> {
 
   Future<void> createComment() async {
     int commid = await getLastCommentId();
-    print(commid);
     DocumentReference documentReference =
-        FirebaseFirestore.instance.collection("comment").doc();
+        FirebaseFirestore.instance.collection("comments").doc();
 
     Map<String, dynamic> newComment = {
       "Comment_Content": bodyController.text,
@@ -1950,7 +2126,6 @@ class _PostPageState extends State<PostPage> {
     };
 
     // Add the new post to the collection
-    print(newComment);
     await documentReference.set(newComment);
   }
 
@@ -1966,12 +2141,10 @@ class _PostPageState extends State<PostPage> {
                     ? Icons.dark_mode
                     : Icons.light_mode),
                 onPressed: () {
-                  print("clicked swithc");
                   MyApp.themeNotifier.value =
                       MyApp.themeNotifier.value == ThemeMode.light
                           ? ThemeMode.dark
                           : ThemeMode.light;
-                  print(MyApp.themeNotifier.value);
                 }),
           ]),
       body: SingleChildScrollView(
@@ -1992,15 +2165,22 @@ class _PostPageState extends State<PostPage> {
               stream: _postinfo,
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  final postInfo =
+                  final post =
                       snapshot.data!.docs[0].data() as Map<String, dynamic>;
-
+                  var isAuth = false;
+                  var isEdited = false;
+                  if (post['Author_ID'] == email) {
+                    isAuth = true;
+                  }
                   return ForumPostCard(
-                    username: postInfo['Username'],
-                    title: postInfo['Post_Title'],
-                    body: postInfo['Post_Content'],
-                    date: postInfo['Post_Date'],
-                  );
+                      username: post['Username'],
+                      title: post['Post_Title'],
+                      body: post['Post_Content'],
+                      date: post['Post_Date'],
+                      onDelete: () => {},
+                      onEdit: () {},
+                      isEdited: isEdited,
+                      isAuth: isAuth);
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 } else {
@@ -2071,7 +2251,6 @@ class _PostPageState extends State<PostPage> {
                                 String body = bodyController.text;
 
                                 // Do something with the values
-                                print('Body: $body');
 
                                 // Close the bottom sheet
                                 Navigator.of(context).pop();

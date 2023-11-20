@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_1/constants/colors.dart';
 import 'widget_tree.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   await WidgetsFlutterBinding.ensureInitialized();
@@ -51,7 +52,9 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: '',
             theme: ThemeData(
-                primarySwatch: Colors.lightBlue,
+                useMaterial3: true,
+                fontFamily: 'Raleway',
+                primarySwatch: Colors.teal,
                 appBarTheme: AppBarTheme(color: AppColor.darkblue)),
             darkTheme: ThemeData.dark(),
             themeMode: currentMode,

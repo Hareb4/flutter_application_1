@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter_application_1/pages/home.dart';
 import 'package:flutter/material.dart';
 import 'package:group_button/group_button.dart';
@@ -135,7 +136,7 @@ class _HobbiesGridState extends State<HobbiesGrid> {
               height: 10,
             ),
             Text(
-              "what you intereset in :",
+              "choose your 4 interest: ",
               style: TextStyle(fontSize: 28),
             ),
             SizedBox(
@@ -259,10 +260,6 @@ class _HobbiesGridState extends State<HobbiesGrid> {
                 style: TextStyle(fontSize: 24, color: Colors.white),
               ),
             ),
-            Text(
-              result,
-              style: TextStyle(fontSize: 40, color: Colors.green),
-            )
           ],
         ),
       ),
@@ -284,13 +281,15 @@ class _ClubsPageState extends State<ClubsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Align(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 250,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
                         icon: Icon(MyApp.themeNotifier.value == ThemeMode.light
@@ -316,12 +315,17 @@ class _ClubsPageState extends State<ClubsPage> {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           final clubs = snapshot.data!.docs;
+
+                          clubs.shuffle();
+                          // Take the first 5 clubs from the shuffled list
+                          final randomClubs = clubs.take(5).toList();
+
                           return ListView.builder(
                             scrollDirection: Axis.vertical,
                             shrinkWrap: true,
-                            itemCount: clubs.length,
-                            itemBuilder: (context, index) {
-                              final club = clubs[index];
+                            itemCount: randomClubs.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final club = randomClubs[index];
                               return GestureDetector(
                                 onTap: () {
                                   clubid = club['Club_ID'];
@@ -332,38 +336,18 @@ class _ClubsPageState extends State<ClubsPage> {
                                               clubId: clubid,
                                             )),
                                   );
-                                  // Navigator.push(
-                                  //   context,
-                                  //   MaterialPageRoute(
-                                  //       builder: (context) => ClubPage()),
-                                  // );
-                                  // Add your action here when the Container is pressed.
                                 },
                                 child: Container(
-                                  height: 70,
-                                  margin: EdgeInsets.only(bottom: 5),
+                                  height: 51,
+                                  alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    gradient: AppColor.linearGradient,
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: Color(0xFFD9D9D9),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 16, left: 16),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          club['Club_Name'],
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  padding: EdgeInsets.all(8),
+                                  margin: EdgeInsets.only(
+                                      bottom: 10, left: 20, right: 20, top: 0),
+                                  child: Text(club['Club_Name']),
                                 ),
                               );
                             },
@@ -378,24 +362,31 @@ class _ClubsPageState extends State<ClubsPage> {
                     SizedBox(
                       height: 10,
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/home");
-                      },
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(AppColor.red),
-                        padding: MaterialStateProperty.all(EdgeInsets.symmetric(
-                            horizontal: 100, vertical: 15)),
-                        shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24))),
-                      ),
-                      child: const Text(
-                        "Go To Home",
-                        style: TextStyle(fontSize: 24, color: Colors.white),
-                      ),
-                    ),
                   ]),
-            )));
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, "/home");
+              },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(AppColor.red),
+                padding: MaterialStateProperty.all(
+                    EdgeInsets.symmetric(horizontal: 100, vertical: 15)),
+                shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24))),
+              ),
+              child: const Text(
+                "Go To Home",
+                style: TextStyle(fontSize: 24, color: Colors.white),
+              ),
+            ),
+          ), // Adjust the color and opacity as needed
+        ],
+      ),
+    );
   }
 }
